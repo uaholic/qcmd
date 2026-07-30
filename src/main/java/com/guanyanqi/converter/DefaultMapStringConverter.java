@@ -1,9 +1,9 @@
 package com.guanyanqi.converter;
 
-import com.google.common.collect.Maps;
 import com.guanyanqi.constant.Constants;
 import com.guanyanqi.exception.QCmdException;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * @author guanyanqi
  */
-public class DefaultMapStringConverter implements QMapStringConverter<String, String> {
+public class  DefaultMapStringConverter implements QMapStringConverter<String, String> {
 
     private static final DefaultMapStringConverter instance = new DefaultMapStringConverter();
 
@@ -40,7 +40,7 @@ public class DefaultMapStringConverter implements QMapStringConverter<String, St
      */
     @Override
     public Map<String, String> convert(String value) {
-        Map<String, String> map = Maps.newHashMap();
+        Map<String, String> map = new HashMap<>();
         for (String s : value.split(Constants.COMMON_SPLIT_REG)) {
             String[] kv = s.split(Constants.COMMON_KV_SPLIT_REG, 2);
             if (kv.length < 2) {

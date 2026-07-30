@@ -3,10 +3,10 @@ package com.guanyanqi.converter;
 import java.util.Map;
 
 /**
- * 专门用于将字符串转换为键值对映射（Map<K, V>）的转换器接口。
- * 继承自 {@link QStringConverter} 接口，强调了转换目标是一个映射（Map）类型。
+ * 专门用于将字符串转换为键值对映射（{@code Map<K, V>}）的转换器接口。
+ * 继承自 {@link QStringConverter} 接口，强调了转换目标是一个映射（{@code Map<K, V>}）类型。
  *
- * 这个接口允许实现类定义将单一字符串值（通常格式为"key1=value1,key2=value2"）转换为Map中的键值对的逻辑，
+ * 这个接口允许实现类定义将单一字符串值（通常格式为"key1=value1,key2=value2"）转换为 {@code Map<K, V>} 中的键值对的逻辑，
  * 非常适合处理需要从字符串中解析键值对数据的场景。
  *
  * @param <K> Map中键的类型

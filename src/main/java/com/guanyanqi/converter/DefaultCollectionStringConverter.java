@@ -1,8 +1,9 @@
 package com.guanyanqi.converter;
 
-import com.google.common.collect.Lists;
 import com.guanyanqi.constant.Constants;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -31,11 +32,11 @@ public class DefaultCollectionStringConverter implements QCollectionStringConver
      * 将给定的字符串按照预定义的分隔符分割为一个字符串集合。
      *
      * @param value 待分割的字符串
-     * @return 分割后的字符串集合，使用 {@link Lists#newArrayList} 创建
+     * @return 分割后的字符串集合
      */
     @Override
     public Collection<String> convert(String value) {
-        return Lists.newArrayList(value.split(Constants.COMMON_SPLIT_REG));
+        return new ArrayList<>(Arrays.asList(value.split(Constants.COMMON_SPLIT_REG)));
     }
 
     /**

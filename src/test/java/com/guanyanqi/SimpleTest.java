@@ -1,41 +1,45 @@
 package com.guanyanqi;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.guanyanqi.annotation.Cmd;
 import com.guanyanqi.annotation.Parameter;
 import com.guanyanqi.annotation.Vars;
 import com.guanyanqi.converter.QStringConverter;
-import org.junit.Assert;
-import org.junit.Test;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class SimpleTest {
 
-    @Test
+    private static void assertEquals(Object expected, Object actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Expected: <" + expected + "> but was: <" + actual + ">");
+        }
+    }
+
+    private static void assertSame(Object expected, Object actual) {
+        if (expected != actual) {
+            throw new AssertionError("Expected same instance: <" + expected + "> but was: <" + actual + ">");
+        }
+    }
+
     public void test() {
         String cmd = "trans -A 110@测试账户 -t LOAN -r 123=order1,456=order2,789=order3 --amount 0.01 -o 123,456,789 555 666 777";
         String[] argv = cmd.trim().split(" ");
         QCmd qCmd = QCmd.of(argv);
         Transaction result = qCmd.parse(Transaction.class);
-        Assert.assertEquals(0.01d, result.amount, 0.0);
-        Assert.assertEquals("", result.name);
-        Assert.assertSame(result.operationType, OperationType.LOAN);
-        Assert.assertEquals("测试账户", result.account.accountName);
-        Assert.assertEquals("110", result.account.accountNo);
-        Set<Long> ordersExpected = Sets.newHashSet(123L, 456L, 789L);
-        Map<Long, String> remarkExpected = Maps.newHashMap();
+        assertEquals(0.01d, result.amount);
+        assertEquals("", result.name);
+        assertSame(result.operationType, OperationType.LOAN);
+        assertEquals("测试账户", result.account.accountName);
+        assertEquals("110", result.account.accountNo);
+        Set<Long> ordersExpected = new HashSet<>(Arrays.asList(123L, 456L, 789L));
+        Map<Long, String> remarkExpected = new HashMap<>();
         remarkExpected.put(123L, "order1");
         remarkExpected.put(456L, "order2");
         remarkExpected.put(789L, "order3");
-        List<Long> idsExpected = Lists.newArrayList(555L, 666L, 777L);
-        Assert.assertEquals(result.orders, ordersExpected);
-        Assert.assertEquals(result.remark, remarkExpected);
-        Assert.assertEquals(result.ids, idsExpected);
+        List<Long> idsExpected = Arrays.asList(555L, 666L, 777L);
+        assertEquals(result.orders, ordersExpected);
+        assertEquals(result.remark, remarkExpected);
+        assertEquals(result.ids, idsExpected);
         String descExpected = "使用方法：命令 [参数 参数值] [变量...]\n" +
                 "命令：trans\n" +
                 "功能描述：账户操作命令\n" +
@@ -47,7 +51,7 @@ public class SimpleTest {
                 "\t参数：-o|--orders（可选），参数说明：订单号列表（以英文逗号分割）\n" +
                 "\t参数：-r|--remark（可选），参数说明：备注列表（单号1=备注1,单号2=备注2）\n" +
                 "变量描述：id列表\n";
-        Assert.assertEquals(descExpected, qCmd.getDesc());
+        assertEquals(descExpected, qCmd.getDesc());
     }
 
     @Cmd(names = {"trans"}, desc = "账户操作命令")
