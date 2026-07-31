@@ -1,0 +1,32 @@
+package com.guanyanqi.core.parser.impl;
+
+import com.guanyanqi.core.parser.*;
+
+/**
+ * 处理 GNU 风格的等号分隔选项（{@code --key=value} 或 {@code -k=value}）。
+ * <p>
+ * 将等号前后拆分为选项名和选项值，无需消费后续 token。
+ * </p>
+ *
+ * @author guanyanqi
+ */
+public class EqualsSignOptionHandler implements TokenHandler {
+
+    @Override
+    public TokenResult handle(TokenContext context, ParseState state) {
+        if (state.isTerminatorSeen()) {
+            return null;
+        }
+        String token = context.currentToken();
+        if (!token.startsWith("-") || token.startsWith("---")) {
+            return null;
+        }
+        int eqIdx = token.indexOf('=');
+        if (eqIdx <= 1) {
+            return null;
+        }
+        String optName = token.substring(0, eqIdx);
+        String optValue = token.substring(eqIdx + 1);
+        return TokenResult.option(optName, optValue, context.currentIndex() + 1);
+    }
+}

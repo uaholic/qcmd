@@ -5,9 +5,19 @@ import com.guanyanqi.annotation.Parameter;
 import com.guanyanqi.exception.InvalidParameterValueException;
 import com.guanyanqi.exception.MissingParameterException;
 import com.guanyanqi.exception.UnknownOptionException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * CommandValidator 三种专项异常的端到端验证测试。
+ * <p>
+ * 从 QCmd 入口层驱动，验证 MissingParameterException / InvalidParameterValueException /
+ * UnknownOptionException 在用户给出不合法命令行时被正确抛出，并携带准确的上下文字段。
+ * </p>
+ *
+ * @author guanyanqi
+ */
 public class ValidationTest {
 
     @Cmd(names = {"valid"}, desc = "校验测试")
@@ -19,33 +29,30 @@ public class ValidationTest {
         public String numberField;
     }
 
+    /** 缺少 required=true 的 -req 选项时抛出 MissingParameterException */
     @Test
     public void testMissingParameterException() {
-        try {
+        MissingParameterException e = assertThrows(MissingParameterException.class, () -> {
             QCmd.of(new String[]{"valid"}).parse(ValidCmd.class);
-            Assert.fail("Should fail on missing required parameter");
-        } catch (MissingParameterException e) {
-            Assert.assertTrue(e.getMissingParameters().contains("-req"));
-        }
+        });
+        assertTrue(e.getMissingParameters().contains("-req"));
     }
 
+    /** -num 传入 "abc" 不匹配数字正则时抛出 InvalidParameterValueException */
     @Test
     public void testInvalidParameterValueException() {
-        try {
+        InvalidParameterValueException e = assertThrows(InvalidParameterValueException.class, () -> {
             QCmd.of(new String[]{"valid", "-req", "ok", "-num", "abc"}).parse(ValidCmd.class);
-            Assert.fail("Should fail on regex validation");
-        } catch (InvalidParameterValueException e) {
-            Assert.assertEquals("abc", e.getValue());
-        }
+        });
+        assertEquals("abc", e.getValue());
     }
 
+    /** 传入未声明的 -unknown 选项时抛出 UnknownOptionException */
     @Test
     public void testUnknownOptionException() {
-        try {
+        UnknownOptionException e = assertThrows(UnknownOptionException.class, () -> {
             QCmd.of(new String[]{"valid", "-req", "ok", "-unknown", "123"}).parse(ValidCmd.class);
-            Assert.fail("Should fail on unknown option");
-        } catch (UnknownOptionException e) {
-            Assert.assertEquals("-unknown", e.getOptionName());
-        }
+        });
+        assertEquals("-unknown", e.getOptionName());
     }
 }

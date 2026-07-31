@@ -4,25 +4,28 @@
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)]()
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 
-**qcmd** (Quick Command) 是一个为现代 Java (17+) 打造的极简、轻量、**零依赖（Zero-Dependency）**、**原生支持 Java Record** 的注解驱动命令行参数解析框架。
-
-能用一行代码，将复杂 Linux 命令行参数、标志位、正则表达式规则以及位置变量，直接自动装配到 POJO 或不可变 Java Record 实体类中！
+> 🌐 [中文](#中文) | [English](#english)
 
 ---
 
-## 🔥 核心特性 (Features)
+## 中文
 
-* 🛡️ **零外部依赖 (Zero Dependency)**：不引入 Guava、Commons 等任何第三方库，打包极小，零依赖冲突风险。
-* 💎 **原生支持 Java Record (Native Record Support)**：通过 JDK 16+ `RecordComponent` 与 Canonical Constructor，支持不可变 Record 实体类的直接绑定。
-* ⚡ **符合 POSIX/GNU 解析规范**：完美解决带 `-` 开头的负数参数（如 `-a -123.45`）与无值 Boolean Flag 混淆的经典解析 Bug。
-* 🎨 **自动类型转换与扩展**：内置支持基本类型、Date/Time、Enum、Collection、Map 以及自定义 `QStringConverter`，带有 `ConcurrentHashMap` 性能缓存。
-* 🔍 **规则校验与帮助文档**：支持必填校验（`required`）、正则表达式校验（`valueValidRegex`），自动生成格式美观的命令行帮助手册 (`getDesc()`)。
+**qcmd**（Quick Command）是一个为现代 Java 17+ 打造的极简、轻量、**零外部依赖**、**原生支持 Java Record** 的注解驱动命令行参数解析框架。
 
----
+能用一行代码，将复杂 Linux 命令行参数、标志位、正则校验、位置变量，直接装配到 POJO 或不可变 Record 中。
 
-## 📦 快速引入 (Installation)
+### 核心特性
 
-在 `pom.xml` 中引入依赖：
+| 特性 | 说明 |
+|---|---|
+| 🛡️ **零依赖** | 不引入任何第三方库，无依赖冲突 |
+| 💎 **Record 原生支持** | 通过 RecordComponent + Canonical Constructor 直接绑定不可变 Record |
+| ⚡ **POSIX/GNU 兼容** | `--key=value`、`--` 终止符、负数识别（`-a -123.45`） |
+| 🎨 **类型转换管线** | 基本类型 / Enum / Collection / Map / 自定义 Converter / String 构造器兜底 |
+| 🔍 **校验与帮助** | `required` 必填、`valueValidRegex` 正则、MissingParameterException / InvalidParameterValueException / UnknownOptionException |
+| 🔌 **全链路可扩展** | Token 处理器链、HelpFormatter 帮助格式、Converter 类型转换均支持自定义 |
+
+### 快速引入
 
 ```xml
 <dependency>
@@ -32,22 +35,13 @@
 </dependency>
 ```
 
----
-
-## ⚡ 30 秒快速上手 (Quick Start)
-
-### 方式一：使用现代 Java Record（推荐 ✨）
+### 30 秒快速上手
 
 ```java
-import com.guanyanqi.QCmd;
-import com.guanyanqi.annotation.Cmd;
-import com.guanyanqi.annotation.Parameter;
-import com.guanyanqi.annotation.Vars;
-import java.util.List;
-
 @Cmd(names = {"deploy"}, desc = "应用部署指令")
 public record DeployCmd(
-    @Parameter(names = {"-e", "--env"}, required = true, valueValidRegex = "^(dev|test|prod)$", desc = "目标环境")
+    @Parameter(names = {"-e", "--env"}, required = true,
+               valueValidRegex = "^(dev|test|prod)$", desc = "目标环境")
     String env,
 
     @Parameter(names = {"-t", "--timeout"}, desc = "超时时间")
@@ -60,54 +54,19 @@ public record DeployCmd(
     List<String> files
 ) {}
 
-public class Main {
-    public static void main(String[] args) {
-        String[] inputArgs = new String[]{"deploy", "-e", "prod", "-t", "-30", "-d", "app.jar", "config.xml"};
+// 一行解析
+ParsedCommand<DeployCmd> parsed = QCmd.of(args).parse(DeployCmd.class);
+DeployCmd cmd = parsed.value();
 
-        // 一行代码完成解析与不可变 Record 绑定！
-        DeployCmd cmd = QCmd.of(inputArgs).parse(DeployCmd.class);
-
-        System.out.println("环境: " + cmd.env());         // prod
-        System.out.println("超时: " + cmd.timeout());     // -30
-        System.out.println("DryRun: " + cmd.dryRun());    // true
-        System.out.println("产物: " + cmd.files());       // [app.jar, config.xml]
-    }
-}
+System.out.println(cmd.env());       // prod
+System.out.println(cmd.timeout());   // 30
+System.out.println(cmd.dryRun());    // true
+System.out.println(cmd.files());     // [app.jar, config.yaml]
 ```
 
----
-
-### 方式二：使用标准 POJO 类（兼容模式）
+### 自定义类型转换器
 
 ```java
-import com.guanyanqi.QCmd;
-import com.guanyanqi.annotation.Cmd;
-import com.guanyanqi.annotation.Parameter;
-
-@Cmd(names = {"trans"}, desc = "转账指令")
-public class TransactionCmd {
-    @Parameter(names = {"-a", "--amount"}, required = true, desc = "金额")
-    private double amount;
-
-    @Parameter(names = {"-t", "--tags"}, desc = "标签列表(逗号分隔)")
-    private Set<String> tags;
-
-    @Parameter(names = {"-m", "--meta"}, desc = "扩展元数据(k1=v1,k2=v2)")
-    private Map<String, String> meta;
-}
-```
-
----
-
-## 🛠️ 高级功能 (Advanced Features)
-
-### 1. 自定义类型转换器 (`QStringConverter`)
-
-如果命令行参数需要转换为复杂的自定义对象（如 `host:port` 转 `ServerAddress`）：
-
-```java
-import com.guanyanqi.converter.QStringConverter;
-
 public record ServerAddress(String host, int port) {}
 
 public class ServerAddressConverter implements QStringConverter<ServerAddress> {
@@ -118,7 +77,6 @@ public class ServerAddressConverter implements QStringConverter<ServerAddress> {
     }
 }
 
-// 在 @Parameter 中指定 converter
 @Cmd(names = "connect")
 public record ConnectCmd(
     @Parameter(names = "-s", converter = ServerAddressConverter.class)
@@ -126,43 +84,191 @@ public record ConnectCmd(
 ) {}
 ```
 
-### 2. 自动生成帮助说明 (Help Manual)
+### 自定义帮助文档格式
+
+内置 `TerminalHelpFormatter`（默认纯文本）和 `MarkdownHelpFormatter`（Markdown 表格），也可用 lambda 自定义：
 
 ```java
-QCmd qcmd = QCmd.of(args);
-DeployCmd cmd = qcmd.parse(DeployCmd.class);
+// 终端风格（默认）
+ParsedCommand<DeployCmd> p = QCmd.of(args).parse(DeployCmd.class);
+System.out.println(p.helpText());
+// 命令：deploy
+// 功能描述：应用部署指令
+// 参数说明：
+//     参数：-e|--env（必填），参数说明：目标环境
 
-// 获取格式化输出的使用手册
-System.out.println(qcmd.getDesc());
+// Markdown 表格风格
+ParsedCommand<DeployCmd> p = QCmd.of(args)
+    .withHelpFormatter(new MarkdownHelpFormatter())
+    .parse(DeployCmd.class);
+// ### `deploy`
+// > 应用部署指令
+// | 选项 | 类型 | 必填 | 说明 |
+// |------|------|------|------|
+// | `-e, --env` | String | *是* | 目标环境 |
+
+// Lambda 自定义
+QCmd.of(args)
+    .withHelpFormatter(d -> "USAGE: " + d.getCommandNames())
+    .parse(MyCmd.class);
 ```
 
-控制台输出：
-```text
-使用方法：命令 [参数 参数值] [变量...]
-命令：deploy
-功能描述：应用部署指令
-参数说明：
-	参数：-e|--env（必填），参数说明：目标环境，输入规则：只能是 dev, test 或 prod
-	参数：-t|--timeout（可选），参数说明：超时时间
-	参数：-d|--dry-run（可选），参数说明：模拟试运行
-变量描述：部署包路径列表
+### 自定义 Token 解析器
+
+```java
+QCmd.of(args)
+    .withTokenHandlers(chain -> chain
+        .prepend(new WindowsStyleHandler())   // 前插 /opt → --opt 风格的 handler
+        .append(new EnvVarExpander())         // 追加环境变量展开
+    )
+    .parse(MyCmd.class);
 ```
+
+### 架构概览
+
+| 模块 | 职责 |
+|---|---|
+| `QCmd` | 无状态门面入口 |
+| `ParsedCommand<T>` | 不可变结果容器（value + helpText） |
+| `CommandDescriptor` | 元数据提取 + 6 步类型转换管线 |
+| `TokenHandlerChain` | 可插拔的 Chain of Responsibility 分词器 |
+| `CommandValidator` | 未知选项 / 必填 / 正则校验 |
+| `InstanceBinder` | Record / POJO 反射绑定（Strategy 模式） |
+| `HelpFormatter` | 可替换的帮助文档格式化策略 |
+
+### 扩展点
+
+| 扩展点 | 接口 | 方式 |
+|---|---|---|
+| Token 解析 | `TokenHandler` | `QCmd.withTokenHandlers()` |
+| 帮助格式 | `HelpFormatter` | `QCmd.withHelpFormatter()` |
+| 类型转换 | `QStringConverter<T>` | `@Parameter(converter=...)` 或 `ConverterRegistry.register()` |
+
+### 文档
+
+- [使用指南](docs/zh/USAGE.md) · [English](docs/en/USAGE.md)
+- [架构设计](docs/zh/ARCHITECTURE.md) · [English](docs/en/ARCHITECTURE.md)
+- [扩展指南](docs/zh/EXTENDING.md) · [English](docs/en/EXTENDING.md)
+
+### License
+
+[MIT](LICENSE)
 
 ---
 
-## 🏛️ 架构设计 (Architecture)
+## English
 
-`qcmd` 遵循单一职责与门面模式（Facade Pattern）设计：
+**qcmd** (Quick Command) is a minimalist, zero-dependency, annotation-driven CLI argument parser for modern Java 17+. It maps command-line options, flags, regex rules, and positional variables directly onto POJOs or immutable Records — in a single line of code.
 
-* **`QCmd`**：门面统一入口。
-* **`CommandDescriptor`**：元数据提取器（支持 RecordComponent & Field）。
-* **`CommandLineParser`**：符合 POSIX/GNU 规范的分词状态机。
-* **`CommandValidator`**：规则与细粒度异常校验器。
-* **`InstanceBinder`**：属性转换与 POJO / Record 实例化绑定器。
-* **`HelpFormatter`**：帮助文档渲染生成器。
+### Features
 
----
+| Feature | Description |
+|---|---|
+| 🛡️ **Zero Dependencies** | No Guava, no Commons — zero runtime dependencies |
+| 💎 **Native Record Support** | Direct binding via RecordComponent + Canonical Constructor |
+| ⚡ **POSIX/GNU Compatible** | `--key=value` syntax, `--` terminator, negative number detection |
+| 🎨 **Type Conversion Pipeline** | Primitives, enums, collections, maps, custom converters, String-ctor fallback |
+| 🔍 **Validation & Help** | Required params, regex validation, typed exceptions, auto-generated help |
+| 🔌 **Fully Extensible** | Custom token handlers, help formatters, and type converters |
 
-## 📄 开源协议 (License)
+### Quick Start
 
-本项目基于 [MIT License](LICENSE) 协议开源。
+```xml
+<dependency>
+    <groupId>com.guanyanqi</groupId>
+    <artifactId>qcmd</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+```java
+@Cmd(names = {"deploy"}, desc = "Application deployment command")
+public record DeployCmd(
+    @Parameter(names = {"-e", "--env"}, required = true,
+               valueValidRegex = "^(dev|test|prod)$", desc = "Target environment")
+    String env,
+
+    @Parameter(names = {"-t", "--timeout"}, desc = "Timeout in seconds")
+    int timeout,
+
+    @Parameter(names = {"-d", "--dry-run"}, desc = "Dry run mode")
+    boolean dryRun,
+
+    @Vars(desc = "Artifact paths")
+    List<String> files
+) {}
+
+// One-liner: parse + bind to immutable Record
+ParsedCommand<DeployCmd> parsed = QCmd.of(args).parse(DeployCmd.class);
+DeployCmd cmd = parsed.value();
+```
+
+### Custom Converter
+
+```java
+public class ServerAddressConverter implements QStringConverter<ServerAddress> {
+    @Override
+    public ServerAddress convert(String value) {
+        String[] parts = value.split(":");
+        return new ServerAddress(parts[0], Integer.parseInt(parts[1]));
+    }
+}
+
+@Parameter(names = "-s", converter = ServerAddressConverter.class)
+ServerAddress server;
+```
+
+### Custom Help Format
+
+```java
+// Terminal (default)
+ParsedCommand<DeployCmd> p = QCmd.of(args).parse(DeployCmd.class);
+System.out.println(p.helpText());
+
+// Markdown table
+QCmd.of(args).withHelpFormatter(new MarkdownHelpFormatter()).parse(DeployCmd.class);
+
+// Lambda
+QCmd.of(args).withHelpFormatter(d -> "USAGE: " + d.getCommandNames()).parse(MyCmd.class);
+```
+
+### Custom Token Handlers
+
+```java
+QCmd.of(args)
+    .withTokenHandlers(chain -> chain
+        .prepend(new WindowsStyleHandler())
+        .append(new EnvVarExpander())
+    )
+    .parse(MyCmd.class);
+```
+
+### Architecture
+
+| Module | Responsibility |
+|---|---|
+| `QCmd` | Stateless facade entry point |
+| `ParsedCommand<T>` | Immutable result container |
+| `CommandDescriptor` | Metadata extraction + 6-stage type conversion |
+| `TokenHandlerChain` | Pluggable Chain of Responsibility tokenizer |
+| `CommandValidator` | Unknown option / required / regex validation |
+| `InstanceBinder` | Record / POJO reflection binding (Strategy pattern) |
+| `HelpFormatter` | Swappable help format strategy |
+
+### Extension Points
+
+| Layer | Interface | Registration |
+|---|---|---|
+| Token parsing | `TokenHandler` | `QCmd.withTokenHandlers()` |
+| Help format | `HelpFormatter` | `QCmd.withHelpFormatter()` |
+| Type conversion | `QStringConverter<T>` | `@Parameter(converter=...)` or `ConverterRegistry.register()` |
+
+### Documentation
+
+- [Usage Guide](docs/en/USAGE.md) · [中文](docs/zh/USAGE.md)
+- [Architecture](docs/en/ARCHITECTURE.md) · [中文](docs/zh/ARCHITECTURE.md)
+- [Extending](docs/en/EXTENDING.md) · [中文](docs/zh/EXTENDING.md)
+
+### License
+
+[MIT](LICENSE)

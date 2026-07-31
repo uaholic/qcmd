@@ -9,18 +9,36 @@ import com.guanyanqi.exception.InvalidParameterValueException;
 import com.guanyanqi.exception.MissingParameterException;
 import com.guanyanqi.exception.QCmdException;
 import com.guanyanqi.exception.UnknownOptionException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * 异常体系与内置常量/单例的全面覆盖测试。
+ * <p>
+ * 包含两个维度的验证：
+ * <ol>
+ *   <li><b>注解约束异常场景</b>：无 @Cmd 注解、names 为空、参数名重复</li>
+ *   <li><b>异常类构造器与字段 getter 覆盖</b>：QCmdException 两大核心构造器 +
+ *       MissingParameterException / InvalidParameterValueException / UnknownOptionException
+ *       的构造器与访问器，以及 Constants、Converter 单例的实例化</li>
+ * </ol>
+ * </p>
+ *
+ * @author guanyanqi
+ */
 public class ExceptionHandlingTest {
 
+    /** 未标注 @Cmd 注解的类 */
     public static class NoAnnotationCmd {}
 
+    /** names 为空数组的类 */
     @Cmd(names = {})
     public static class EmptyNameCmd {}
 
+    /** 两个字段声明了相同的 -p 选项名 */
     @Cmd(names = "dup")
     public static class DupParamCmd {
         @Parameter(names = "-p")
@@ -30,60 +48,66 @@ public class ExceptionHandlingTest {
         public String p2;
     }
 
+    /**
+     * 验证三类注解配置错误场景各自的异常信息：
+     * <ul>
+     *   <li>缺少 @Cmd 注解 → "未标注 @Cmd 注解"</li>
+     *   <li>names 为空数组 → "names 不能为空"</li>
+     *   <li>参数名重复 → "重复定义"</li>
+     * </ul>
+     */
     @Test
     public void testExceptionScenarios() {
-        try {
+        // 无注解
+        QCmdException e1 = assertThrows(QCmdException.class, () -> {
             QCmd.of(new String[]{"test"}).parse(NoAnnotationCmd.class);
-            Assert.fail("Should fail on missing @Cmd");
-        } catch (QCmdException e) {
-            Assert.assertTrue(e.getMessage().contains("没有添加@Cmd注解") || e.getMessage().contains("未标注 @Cmd 注解"));
-        }
+        });
+        assertTrue(e1.getMessage().contains("没有添加@Cmd注解") || e1.getMessage().contains("未标注 @Cmd 注解"));
 
-        try {
+        // 空 names
+        QCmdException e2 = assertThrows(QCmdException.class, () -> {
             QCmd.of(new String[]{"test"}).parse(EmptyNameCmd.class);
-            Assert.fail("Should fail on empty @Cmd names");
-        } catch (QCmdException e) {
-            Assert.assertTrue(e.getMessage().contains("names 不能为空") || e.getMessage().contains("没有声明names"));
-        }
+        });
+        assertTrue(e2.getMessage().contains("names 不能为空") || e2.getMessage().contains("没有声明names"));
 
-        try {
+        // 重复参数名
+        QCmdException e3 = assertThrows(QCmdException.class, () -> {
             QCmd.of(new String[]{"dup"}).parse(DupParamCmd.class);
-            Assert.fail("Should fail on duplicate parameter name");
-        } catch (QCmdException e) {
-            Assert.assertTrue(e.getMessage().contains("重复定义") || e.getMessage().contains("重复声明"));
-        }
+        });
+        assertTrue(e3.getMessage().contains("重复定义") || e3.getMessage().contains("重复声明"));
     }
 
+    /**
+     * 覆盖常量/转换器单例及全部异常类的构造器与 getter。
+     * <p>目的：确保所有公共类可被实例化、所有异常字段的访问器不抛 NullPointerException，
+     * 提高 JaCoCo 行覆盖率。</p>
+     */
     @Test
     public void testCoverageForExceptionAndConstantConstructors() {
-        // 覆盖 Constants、Converters 与 Exceptions 默认构造器与上下文访问器
-        Assert.assertNotNull(new Constants());
-        Assert.assertNotNull(DefaultCollectionStringConverter.getInstance());
-        Assert.assertNotNull(DefaultMapStringConverter.getInstance());
+        // 覆盖 Constants、Converters 与 Exceptions 默认构造器与访问器
+        assertNotNull(new Constants());
+        assertNotNull(DefaultCollectionStringConverter.getInstance());
+        assertNotNull(DefaultMapStringConverter.getInstance());
 
-        QCmd qcmd = QCmd.of(new String[]{"dup"});
+        // QCmdException 核心构造器
         QCmdException ex1 = new QCmdException("msg");
-        QCmdException ex2 = new QCmdException(new RuntimeException("cause"));
-        QCmdException ex3 = new QCmdException("msg", qcmd);
-        QCmdException ex4 = new QCmdException("msg", new RuntimeException("cause"));
-        QCmdException ex5 = new QCmdException("msg", new RuntimeException("cause"), qcmd);
+        QCmdException ex2 = new QCmdException("msg", new RuntimeException("cause"));
+        assertEquals("msg", ex1.getMessage());
+        assertEquals("msg", ex2.getMessage());
+        assertNotNull(ex2.getCause());
 
-        ex1.setQCmd(qcmd);
-        Assert.assertEquals(qcmd, ex1.getQCmd());
-        Assert.assertEquals(qcmd, ex3.getQCmd());
-        Assert.assertEquals(qcmd, ex5.getQCmd());
-        Assert.assertNotNull(ex2.getCause());
-        Assert.assertNotNull(ex4.getCause());
-
+        // MissingParameterException 字段访问
         MissingParameterException mpe = new MissingParameterException("cmd", List.of("-p"));
-        Assert.assertEquals(List.of("-p"), mpe.getMissingParameters());
+        assertEquals(List.of("-p"), mpe.getMissingParameters());
 
+        // InvalidParameterValueException 字段访问
         InvalidParameterValueException ipve = new InvalidParameterValueException("cmd", "-p", "val", "rule");
-        Assert.assertEquals("-p", ipve.getOptionName());
-        Assert.assertEquals("val", ipve.getValue());
-        Assert.assertEquals("rule", ipve.getRuleDesc());
+        assertEquals("-p", ipve.getOptionName());
+        assertEquals("val", ipve.getValue());
+        assertEquals("rule", ipve.getRuleDesc());
 
+        // UnknownOptionException 字段访问
         UnknownOptionException uoe = new UnknownOptionException("cmd", "-unk");
-        Assert.assertEquals("-unk", uoe.getOptionName());
+        assertEquals("-unk", uoe.getOptionName());
     }
 }

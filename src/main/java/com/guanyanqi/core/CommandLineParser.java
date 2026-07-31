@@ -1,18 +1,22 @@
 package com.guanyanqi.core;
 
+import com.guanyanqi.core.parser.TokenHandlerChain;
 import com.guanyanqi.exception.QCmdException;
 
 import java.util.*;
 
 /**
- * POSIX / GNU 风格命令行参数解析器（负责分词分流与 Token 匹配提取）。
+ * POSIX / GNU 风格命令行参数解析器（委托给可插拔的 TokenHandler 链）。
  *
- * <p>解析逻辑流程：
- * 1. 校验首个 Token 是否匹配命令类的名称（{@code @Cmd(names = ...)}）。
- * 2. 顺序遍历后续 Token：
- *    - 若以 "-" 开头且属于 Boolean 布尔开关选项，则直接存入值为 "true"。
- *    - 若以 "-" 开头且为非布尔选项，则消费下一个 Token 作为该选项的参数值。
- *    - 若不以 "-" 开头，则作为未指定名称的位置变量（Positional Variables）归集。
+ * <p>内部使用 {@link TokenHandlerChain#defaults()} 执行解析，
+ * 等价于按序调用 6 个内置 handler：
+ * TerminatorHandler → EqualsSignOptionHandler → BooleanFlagHandler →
+ * NegativeNumberHandler → StandardOptionHandler → PositionalHandler。
+ * </p>
+ *
+ * <p>若需自定义解析策略，推荐使用 {@code QCmd.of(args).withTokenHandlers(...)}，
+ * 或直接调用 {@code TokenHandlerChain.builder()...build().execute(args, descriptor)}。
+ * </p>
  *
  * @author guanyanqi
  */
@@ -33,6 +37,7 @@ public class CommandLineParser {
 
     /**
      * 将原始命令行数组解析拆解为 ParseResult。
+     * <p>使用默认处理器链 {@link TokenHandlerChain#defaults()}。</p>
      *
      * @param args       命令行输入的原始参数数组
      * @param descriptor 命令类的描述符元数据
@@ -40,47 +45,6 @@ public class CommandLineParser {
      * @throws QCmdException 当命令名不匹配、命令行为空或选项缺少值时抛出
      */
     public static ParseResult parse(String[] args, CommandDescriptor descriptor) {
-        if (args == null || args.length == 0) {
-            throw new QCmdException("命令行内容为空");
-        }
-
-        List<String> tokens = new ArrayList<>(Arrays.asList(args));
-        // 第 0 个 Token 必须为命令匹配名称
-        String cmd = tokens.get(0);
-
-        if (!descriptor.getCommandNames().contains(cmd)) {
-            throw new QCmdException("输入的命令 [" + cmd + "] 与目标类声明的命令 " + descriptor.getCommandNames() + " 不匹配");
-        }
-
-        Map<String, String> optionValues = new HashMap<>();
-        List<String> positionalVars = new ArrayList<>();
-        Set<String> boolOptions = descriptor.getBoolOptionNames();
-
-        // 从第 1 个 Token 开始进行分词状态机解析
-        for (int i = 1; i < tokens.size(); i++) {
-            String curr = tokens.get(i);
-
-            // 判断是否为选项开关（以 - 或 -- 开头）
-            if (curr.startsWith("-")) {
-                if (boolOptions.contains(curr)) {
-                    // 场景 A：Boolean 无值开关选项（例如 -v），直接标记为 "true"
-                    optionValues.put(curr, "true");
-                } else {
-                    // 场景 B：带值选项（例如 -port 8080），向前指针递增消费下一个 Token 作为参数值
-                    if (i + 1 < tokens.size()) {
-                        String next = tokens.get(i + 1);
-                        optionValues.put(curr, next);
-                        i++; // 跳过已消费的参数值 Token
-                    } else {
-                        throw new QCmdException("参数选项 [" + curr + "] 缺少对应的参数值");
-                    }
-                }
-            } else {
-                // 场景 C：不以 - 开头的纯文本，归集为位置变量（Positional Vars）
-                positionalVars.add(curr);
-            }
-        }
-
-        return new ParseResult(cmd, optionValues, positionalVars);
+        return TokenHandlerChain.defaults().execute(args, descriptor);
     }
 }

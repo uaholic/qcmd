@@ -40,18 +40,19 @@ public class PojoBindingStrategy implements CommandBindingStrategy {
                         field
                 );
                 descriptor.registerOption(option);
-            }
-            Vars vAnno = field.getAnnotation(Vars.class);
-            if (vAnno != null) {
-                VarsDescriptor vars = new VarsDescriptor(
-                        vAnno.desc(),
-                        vAnno.elementConverter(),
-                        field.getType(),
-                        field.getGenericType(),
-                        field.getName(),
-                        field
-                );
-                descriptor.registerVars(vars);
+            } else {
+                Vars vAnno = field.getAnnotation(Vars.class);
+                if (vAnno != null) {
+                    VarsDescriptor vars = new VarsDescriptor(
+                            vAnno.desc(),
+                            vAnno.elementConverter(),
+                            field.getType(),
+                            field.getGenericType(),
+                            field.getName(),
+                            field
+                    );
+                    descriptor.registerVars(vars);
+                }
             }
         }
     }

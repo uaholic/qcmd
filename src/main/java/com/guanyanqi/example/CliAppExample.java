@@ -1,6 +1,7 @@
 package com.guanyanqi.example;
 
 import com.guanyanqi.QCmd;
+import com.guanyanqi.ParsedCommand;
 import com.guanyanqi.annotation.Cmd;
 import com.guanyanqi.annotation.Parameter;
 import com.guanyanqi.annotation.Vars;
@@ -59,7 +60,8 @@ public class CliAppExample {
         System.out.println("==================================================");
 
         QCmd qcmd = QCmd.of(mockCliArgs);
-        DeployCommand command = qcmd.parse(DeployCommand.class);
+        ParsedCommand<DeployCommand> parsed = qcmd.parse(DeployCommand.class);
+        DeployCommand command = parsed.value();
 
         System.out.println("✅ 解析成功！装配结果如下：");
         System.out.println("   目标服务器 : " + command.server().host() + " (Port: " + command.server().port() + ")");
@@ -68,6 +70,6 @@ public class CliAppExample {
         System.out.println("   Dry-Run    : " + command.dryRun());
         System.out.println("   部署产物   : " + command.artifacts());
         System.out.println("\n📖 自动生成的帮助文档：");
-        System.out.println(qcmd.getDesc());
+        System.out.println(parsed.helpText());
     }
 }

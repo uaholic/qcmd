@@ -2,13 +2,23 @@ package com.guanyanqi;
 
 import com.guanyanqi.exception.QCmdException;
 import com.guanyanqi.utils.QCmdUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * QCmdUtils 工具方法的单元测试。
+ * <p>
+ * 覆盖 getAllFieldsList（含继承）和 createCollectionByType（含全部默认类型和异常路径）。
+ * </p>
+ *
+ * @author guanyanqi
+ */
 public class QCmdUtilsTest {
 
+    /** 继承层次测试类 */
     public static class Parent {
         public String parentField;
     }
@@ -17,51 +27,40 @@ public class QCmdUtilsTest {
         public String childField;
     }
 
+    /** 有公开无参构造方法的自定义集合子类 */
     public static class CustomCollection extends ArrayList<String> {
         public CustomCollection() {}
     }
 
+    /** 只有私有构造方法的集合子类，createCollectionByType 应抛异常 */
     public static class PrivateCollection extends ArrayList<String> {
         private PrivateCollection(String dummy) {}
     }
 
-    @Test
-    public void testIsNotBlank() {
-        Assert.assertFalse(QCmdUtils.isNotBlank(null));
-        Assert.assertFalse(QCmdUtils.isNotBlank("   "));
-        Assert.assertTrue(QCmdUtils.isNotBlank("ok"));
-    }
-
-    @Test
-    public void testIsNotEmpty() {
-        Assert.assertFalse(QCmdUtils.isNotEmpty(null));
-        Assert.assertFalse(QCmdUtils.isNotEmpty(Collections.emptyList()));
-        Assert.assertTrue(QCmdUtils.isNotEmpty(List.of("1")));
-    }
-
+    /** getAllFieldsList 应返回包含父类字段在内的全部字段 */
     @Test
     public void testGetAllFieldsList() {
         var fields = QCmdUtils.getAllFieldsList(Child.class);
-        Assert.assertEquals(2, fields.size());
+        assertEquals(2, fields.size());
     }
 
+    /** 覆盖 List / Collection / Set / Queue / Deque / 自定义子类 的实例创建 */
     @Test
     public void testCreateCollectionByType() throws Exception {
-        Assert.assertNotNull(QCmdUtils.createCollectionByType(List.class));
-        Assert.assertNotNull(QCmdUtils.createCollectionByType(Collection.class)); // 覆盖 Collection.class == type 分支
-        Assert.assertNotNull(QCmdUtils.createCollectionByType(Set.class));
-        Assert.assertNotNull(QCmdUtils.createCollectionByType(Queue.class));
-        Assert.assertNotNull(QCmdUtils.createCollectionByType(Deque.class));
-        Assert.assertNotNull(QCmdUtils.createCollectionByType(CustomCollection.class));
+        assertNotNull(QCmdUtils.createCollectionByType(List.class));
+        assertNotNull(QCmdUtils.createCollectionByType(Collection.class));
+        assertNotNull(QCmdUtils.createCollectionByType(Set.class));
+        assertNotNull(QCmdUtils.createCollectionByType(Queue.class));
+        assertNotNull(QCmdUtils.createCollectionByType(Deque.class));
+        assertNotNull(QCmdUtils.createCollectionByType(CustomCollection.class));
     }
 
+    /** 只有私有构造方法的集合子类：createCollectionByType 应抛异常 */
     @Test
     public void testCreateCollectionByTypeFailure() {
-        try {
+        Exception e = assertThrows(Exception.class, () -> {
             QCmdUtils.createCollectionByType(PrivateCollection.class);
-            Assert.fail();
-        } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("没有默认无参构造方法"));
-        }
+        });
+        assertTrue(e.getMessage().contains("没有默认无参构造方法"));
     }
 }

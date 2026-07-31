@@ -36,26 +36,6 @@ public class QCmdUtils {
     }
 
     /**
-     * 判断字符串是否不为空且不全为空格。
-     *
-     * @param str 待校验字符串
-     * @return 若不为空且包含非空字符则返回 true
-     */
-    public static boolean isNotBlank(String str) {
-        return str != null && !str.trim().isEmpty();
-    }
-
-    /**
-     * 判断集合是否不为空。
-     *
-     * @param collection 待校验集合
-     * @return 若集合不为空且元素个数大于 0 则返回 true
-     */
-    public static boolean isNotEmpty(Collection<?> collection) {
-        return collection != null && !collection.isEmpty();
-    }
-
-    /**
      * 根据集合接口类型动态实例化具体集合实现对象。
      *
      * @param type 集合接口或实现类 Class

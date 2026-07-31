@@ -34,7 +34,7 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
     public void extractMetadata(Class<?> targetClass, CommandDescriptor descriptor) {
         RecordComponent[] components = targetClass.getRecordComponents();
         for (RecordComponent comp : components) {
-            // 级联提取 @Parameter 注解并构造 OptionDescriptor 领域模型
+            // 级联提取 @Parameter 注解，未找到则尝试 @Vars（互斥）
             Parameter param = getParameterAnnotation(comp, targetClass);
             if (param != null) {
                 OptionDescriptor option = new OptionDescriptor(
@@ -50,20 +50,19 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
                         comp
                 );
                 descriptor.registerOption(option);
-            }
-
-            // 级联提取 @Vars 注解并构造 VarsDescriptor 领域模型
-            Vars vAnno = getVarsAnnotation(comp, targetClass);
-            if (vAnno != null) {
-                VarsDescriptor vars = new VarsDescriptor(
-                        vAnno.desc(),
-                        vAnno.elementConverter(),
-                        comp.getType(),
-                        comp.getGenericType(),
-                        comp.getName(),
-                        comp
-                );
-                descriptor.registerVars(vars);
+            } else {
+                Vars vAnno = getVarsAnnotation(comp, targetClass);
+                if (vAnno != null) {
+                    VarsDescriptor vars = new VarsDescriptor(
+                            vAnno.desc(),
+                            vAnno.elementConverter(),
+                            comp.getType(),
+                            comp.getGenericType(),
+                            comp.getName(),
+                            comp
+                    );
+                    descriptor.registerVars(vars);
+                }
             }
         }
     }
