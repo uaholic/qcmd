@@ -14,7 +14,7 @@ import java.util.*;
  * 若返回 null 则轮到下一个 handler；若所有 handler 都返回 null 则抛出异常。
  * </p>
  *
- * <p>推荐使用方式：
+ * <p>推荐使用方式：</p>
  * <pre>
  *     // 使用默认链（覆盖所有标准场景）
  *     ParseResult result = TokenHandlerChain.defaults().execute(args, descriptor);
@@ -24,7 +24,6 @@ import java.util.*;
  *         .append(new MyCustomHandler())
  *         .build();
  * </pre>
- * </p>
  *
  * @author guanyanqi
  */
@@ -47,6 +46,8 @@ public final class TokenHandlerChain {
      *   <li>{@link StandardOptionHandler} — "-p 8080" 带值选项</li>
      *   <li>{@link PositionalHandler} — 位置变量兜底</li>
      * </ol>
+     *
+     * @return 预设的默认处理器链
      */
     public static TokenHandlerChain defaults() {
         return new TokenHandlerChain(List.of(
@@ -61,6 +62,8 @@ public final class TokenHandlerChain {
 
     /**
      * 创建构建器，初始为空链。
+     *
+     * @return 链构建器实例
      */
     public static Builder builder() {
         return new Builder();
@@ -129,6 +132,8 @@ public final class TokenHandlerChain {
 
         /**
          * 从默认链初始化构建器（包含全部 6 个内置 handler）。
+         *
+         * @return 构建器实例
          */
         public Builder defaults() {
             handlers.clear();
@@ -138,6 +143,9 @@ public final class TokenHandlerChain {
 
         /**
          * 追加一个 handler 到链末尾。
+         *
+         * @param handler 待追加的处理器
+         * @return 构建器实例
          */
         public Builder append(TokenHandler handler) {
             handlers.add(Objects.requireNonNull(handler));
@@ -146,6 +154,9 @@ public final class TokenHandlerChain {
 
         /**
          * 前插一个 handler 到链开头。
+         *
+         * @param handler 待前插的处理器
+         * @return 构建器实例
          */
         public Builder prepend(TokenHandler handler) {
             handlers.add(0, Objects.requireNonNull(handler));
@@ -155,6 +166,10 @@ public final class TokenHandlerChain {
         /**
          * 在指定类型的 handler <strong>之前</strong>插入。
          * 若未找到 anchor，抛异常。
+         *
+         * @param anchor  目标锚点处理器类型
+         * @param handler 待插入的处理器
+         * @return 构建器实例
          */
         public Builder before(Class<? extends TokenHandler> anchor, TokenHandler handler) {
             int idx = indexOf(anchor);
@@ -165,6 +180,10 @@ public final class TokenHandlerChain {
         /**
          * 在指定类型的 handler <strong>之后</strong>插入。
          * 若未找到 anchor，抛异常。
+         *
+         * @param anchor  目标锚点处理器类型
+         * @param handler 待插入的处理器
+         * @return 构建器实例
          */
         public Builder after(Class<? extends TokenHandler> anchor, TokenHandler handler) {
             int idx = indexOf(anchor);
@@ -175,6 +194,10 @@ public final class TokenHandlerChain {
         /**
          * 替换链中第一个匹配类型的 handler。
          * 若未找到 target，抛异常。
+         *
+         * @param target  目标被替换处理器类型
+         * @param handler 新的处理器
+         * @return 构建器实例
          */
         public Builder replace(Class<? extends TokenHandler> target, TokenHandler handler) {
             int idx = indexOf(target);
@@ -185,6 +208,9 @@ public final class TokenHandlerChain {
         /**
          * 移除指定类型的 handler。
          * 若未找到 target，抛异常。
+         *
+         * @param target 目标被移除处理器类型
+         * @return 构建器实例
          */
         public Builder remove(Class<? extends TokenHandler> target) {
             handlers.remove(indexOf(target));
@@ -193,6 +219,8 @@ public final class TokenHandlerChain {
 
         /**
          * 构建不可变的 TokenHandlerChain。
+         *
+         * @return 构建好的处理器链
          */
         public TokenHandlerChain build() {
             if (handlers.isEmpty()) {

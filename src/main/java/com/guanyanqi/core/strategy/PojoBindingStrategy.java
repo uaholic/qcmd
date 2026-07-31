@@ -21,6 +21,12 @@ import java.util.Map;
  */
 public class PojoBindingStrategy implements CommandBindingStrategy {
 
+    /**
+     * 创建 POJO 绑定策略实例。
+     */
+    public PojoBindingStrategy() {
+    }
+
     @Override
     public void extractMetadata(Class<?> targetClass, CommandDescriptor descriptor) {
         List<Field> fields = QCmdUtils.getAllFieldsList(targetClass);

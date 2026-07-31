@@ -9,7 +9,7 @@ import java.util.List;
  * <p>
  * 封装了 token 文本本身、在原始参数列表中的位置、以及整个命令的元数据。
  * 提供 peekNext 方法让 handler 向前"窥视"后续 token。
-* </p>
+ * </p>
  *
  * @param currentToken 当前待处理的 token 文本
  * @param allTokens    完整的命令行 token 列表（含命令名）
@@ -25,6 +25,8 @@ public record TokenContext(
 
     /**
      * 是否还有下一个 token（不包含当前）。
+     *
+     * @return 若包含下一个 token 返回 true，否则返回 false
      */
     public boolean hasNext() {
         return currentIndex + 1 < allTokens.size();

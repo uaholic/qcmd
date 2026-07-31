@@ -14,6 +14,12 @@ import com.guanyanqi.exception.QCmdException;
  */
 public class StandardOptionHandler implements TokenHandler {
 
+    /**
+     * 创建标准带值选项处理器实例。
+     */
+    public StandardOptionHandler() {
+    }
+
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
         if (state.isTerminatorSeen()) {

@@ -15,6 +15,12 @@ import com.guanyanqi.core.model.VarsDescriptor;
  */
 public class MarkdownHelpFormatter implements HelpFormatter {
 
+    /**
+     * 创建 Markdown 帮助格式化器实例。
+     */
+    public MarkdownHelpFormatter() {
+    }
+
     @Override
     public String format(CommandDescriptor descriptor) {
         Cmd cmdAnno = descriptor.getCmdAnnotation();

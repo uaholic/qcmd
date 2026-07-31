@@ -11,6 +11,7 @@ import java.util.List;
  * 纯文本终端风格帮助文档格式化器——默认实现。
  * <p>
  * 输出格式：
+ * </p>
  * <pre>
  * 使用方法：命令 [参数 参数值] [变量...]
  * 命令：deploy|dep
@@ -20,11 +21,16 @@ import java.util.List;
  *     参数：-t|--timeout（可选），参数说明：超时时间(秒)
  * 变量描述：部署产物路径列表
  * </pre>
- * </p>
  *
  * @author guanyanqi
  */
 public class TerminalHelpFormatter implements HelpFormatter {
+
+    /**
+     * 创建默认的终端帮助格式化器实例。
+     */
+    public TerminalHelpFormatter() {
+    }
 
     @Override
     public String format(CommandDescriptor descriptor) {
@@ -57,7 +63,12 @@ public class TerminalHelpFormatter implements HelpFormatter {
         return usage.toString();
     }
 
-    /** 单个选项的格式化 */
+    /**
+     * 单个选项的格式化 helper。
+     *
+     * @param option 选项描述符
+     * @return 格式化后的字符串
+     */
     private static String formatParamHelp(OptionDescriptor option) {
         String paramName = String.join("|", option.names());
         StringBuilder paramUsage = new StringBuilder("参数：");

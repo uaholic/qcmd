@@ -9,14 +9,14 @@ import java.util.function.UnaryOperator;
  * QCmd 命令行处理工具的核心门面类（Facade）。
  * 委托给 core 层的 CommandDescriptor, CommandLineParser, CommandValidator, InstanceBinder, HelpFormatter 处理。
  *
- * <p>推荐用法（无状态）：
+ * <p>推荐用法（无状态）：</p>
  * <pre>
  *     ParsedCommand&lt;DeployCmd&gt; result = QCmd.of(args).parse(DeployCmd.class);
  *     DeployCmd cmd = result.value();
  *     String help = result.helpText();
  * </pre>
  *
- * <p>自定义：
+ * <p>自定义：</p>
  * <pre>
  *     // 自定义 Token 处理器链
  *     QCmd.of(args).withTokenHandlers(chain -&gt; chain.append(new MyHandler()))
@@ -39,6 +39,12 @@ public class QCmd {
         this.args = args;
     }
 
+    /**
+     * 创建 QCmd 门面实例。
+     *
+     * @param args 命令行入参数组
+     * @return 构造好的 QCmd 实例
+     */
     public static QCmd of(String[] args) {
         return new QCmd(args);
     }

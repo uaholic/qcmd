@@ -10,6 +10,12 @@ import com.guanyanqi.core.parser.*;
  */
 public class PositionalHandler implements TokenHandler {
 
+    /**
+     * 创建位置变量兜底处理器实例。
+     */
+    public PositionalHandler() {
+    }
+
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
         // 终止符之后：无论是否以 - 开头，全部作为位置变量

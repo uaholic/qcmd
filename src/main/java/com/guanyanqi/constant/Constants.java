@@ -16,6 +16,13 @@ package com.guanyanqi.constant;
  * @author guanyanqi
  */
 public class Constants {
+
+    /**
+     * 工具类私有构造函数。
+     */
+    private Constants() {
+    }
+
     /**
      * 用于分隔列表项的常用正则表达式字符串。
      * 例如，在处理以逗号分隔的字符串列表时使用。

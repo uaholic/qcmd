@@ -20,16 +20,34 @@ public class ParseState {
     final List<String> positionalVars = new ArrayList<>();
     boolean terminatorSeen = false;
 
+    /**
+     * 创建默认解析状态容器。
+     */
+    public ParseState() {
+    }
+
+    /**
+     * 是否已遇到终止符 '--'。
+     *
+     * @return 已遇到返回 true，否则返回 false
+     */
     public boolean isTerminatorSeen() {
         return terminatorSeen;
     }
 
+    /**
+     * 设置终止符标志状态。
+     *
+     * @param terminatorSeen 终止符标志
+     */
     public void setTerminatorSeen(boolean terminatorSeen) {
         this.terminatorSeen = terminatorSeen;
     }
 
     /**
      * 将 TokenResult 应用到当前状态。
+     *
+     * @param result Token 处理结果
      */
     void apply(TokenResult result) {
         switch (result.kind()) {

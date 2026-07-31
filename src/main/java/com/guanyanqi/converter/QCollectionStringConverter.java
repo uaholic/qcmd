@@ -3,7 +3,7 @@ package com.guanyanqi.converter;
 import java.util.Collection;
 
 /**
- * 专门用于将字符串转换为特定类型的集合（Collection<T>）的转换器接口。
+ * 专门用于将字符串转换为特定类型的集合（Collection&lt;T&gt;）的转换器接口。
  * 继承自 {@link QStringConverter} 接口，强调了转换目标是一个集合类型。
  *
  * 这个接口允许实现类定义将单一字符串值转换为集合中元素的逻辑，

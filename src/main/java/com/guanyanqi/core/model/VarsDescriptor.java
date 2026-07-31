@@ -50,31 +50,43 @@ public class VarsDescriptor {
 
     /**
      * 获取位置变量描述说明。
+     *
+     * @return 描述字符串
      */
     public String desc() { return desc; }
 
     /**
      * 获取元素自定义类型转换器 Class。
+     *
+     * @return 转换器 Class
      */
     public Class<? extends QStringConverter<?>> elementConverterClass() { return elementConverterClass; }
 
     /**
      * 获取变量目标 Class 类型。
+     *
+     * @return 目标 Class
      */
     public Class<?> type() { return type; }
 
     /**
      * 获取变量目标泛型 Type。
+     *
+     * @return 泛型 Type
      */
     public Type genericType() { return genericType; }
 
     /**
      * 获取属性名或组件名。
+     *
+     * @return 目标属性名称
      */
     public String targetName() { return targetName; }
 
     /**
      * 获取底层原始反射元素。
+     *
+     * @return 反射 AnnotatedElement
      */
     public AnnotatedElement rawElement() { return rawElement; }
 }

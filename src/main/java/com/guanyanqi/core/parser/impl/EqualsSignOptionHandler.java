@@ -12,6 +12,12 @@ import com.guanyanqi.core.parser.*;
  */
 public class EqualsSignOptionHandler implements TokenHandler {
 
+    /**
+     * 创建等号分隔选项处理器实例。
+     */
+    public EqualsSignOptionHandler() {
+    }
+
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
         if (state.isTerminatorSeen()) {

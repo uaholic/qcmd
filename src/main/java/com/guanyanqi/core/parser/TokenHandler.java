@@ -8,7 +8,7 @@ package com.guanyanqi.core.parser;
  * </p>
  *
  * <p>标有 {@link FunctionalInterface}，简单场景可直接用 lambda。
- * 但需要配合 {@link TokenHandlerChain.Builder#before} / {@link Builder#replace}
+ * 但需要配合 {@link TokenHandlerChain.Builder#before} / {@link TokenHandlerChain.Builder#replace}
  * 按类型定位的高级用法时，请用具名类。</p>
  *
  * @author guanyanqi

@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 提取并持有命令类的统一领域模型描述符（包含 OptionDescriptor 列表与 VarsDescriptor）。
  *
- * <p>核心类型转换机制说明（{@link #convertValue}）：
+ * <p>核心类型转换机制说明（{@link #convertValue}）：</p>
  * 当将命令行中的原始 String 转换到目标字段/组件类型时，优先级如下：
  * 1. <b>自定义转换器 (Custom Converter)</b>：若注解中配置了 {@code converter = MyConverter.class}，优先使用。
  * 2. <b>全局注册转换器 (Global Registry)</b>：查找内置的 20+ 种数据类型转换器（如 Integer, LocalDate 等）。
@@ -48,6 +48,11 @@ public class CommandDescriptor {
      */
     private static final Map<Class<? extends QStringConverter<?>>, QStringConverter<?>> CONVERTER_CACHE = new ConcurrentHashMap<>();
 
+    /**
+     * 构造命令描述符模型。
+     *
+     * @param targetClass 目标命令类 Class
+     */
     public CommandDescriptor(Class<?> targetClass) {
         this.targetClass = Objects.requireNonNull(targetClass, "Target class must not be null");
         this.cmdAnnotation = targetClass.getAnnotation(Cmd.class);
@@ -66,6 +71,8 @@ public class CommandDescriptor {
 
     /**
      * 注册选项描述符，建立选项名称与目标属性名的多重索引映射。
+     *
+     * @param option 待注册的选项描述符
      */
     public void registerOption(OptionDescriptor option) {
         options.add(option);
@@ -86,6 +93,8 @@ public class CommandDescriptor {
 
     /**
      * 注册位置变量描述符，确保整个命令类最多声明一个 @Vars 位置变量。
+     *
+     * @param vars 位置变量描述符
      */
     public void registerVars(VarsDescriptor vars) {
         if (this.varsDescriptor != null) {
@@ -94,6 +103,12 @@ public class CommandDescriptor {
         this.varsDescriptor = vars;
     }
 
+    /**
+     * 根据目标属性/组件名称获取对应的选项描述符。
+     *
+     * @param targetName 字段名或组件名
+     * @return OptionDescriptor 描述符，未找到返回 null
+     */
     public OptionDescriptor getOptionByTargetName(String targetName) {
         return targetNameToOptionMap.get(targetName);
     }
@@ -168,6 +183,13 @@ public class CommandDescriptor {
 
     /**
      * 将解析出的位置变量（Positional Vars）转换为目标变量属性要求的类型（单个对象或集合）。
+     *
+     * @param type           目标属性 Class
+     * @param genericType    目标属性泛型 Type
+     * @param varsDesc       位置变量描述符
+     * @param positionalVars 原始位置变量字符串列表
+     * @return 转换后的强类型变量对象
+     * @throws Exception 当转换失败时抛出
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Object convertVars(Class<?> type, Type genericType, VarsDescriptor varsDesc, List<String> positionalVars) throws Exception {
@@ -218,12 +240,59 @@ public class CommandDescriptor {
         });
     }
 
+    /**
+     * 获取目标命令类 Class。
+     *
+     * @return targetClass
+     */
     public Class<?> getTargetClass() { return targetClass; }
+
+    /**
+     * 获取注解 Cmd。
+     *
+     * @return cmdAnnotation
+     */
     public Cmd getCmdAnnotation() { return cmdAnnotation; }
+
+    /**
+     * 获取所有可调用的命令名集合。
+     *
+     * @return commandNames
+     */
     public Set<String> getCommandNames() { return commandNames; }
+
+    /**
+     * 获取选项描述符列表。
+     *
+     * @return options 列表
+     */
     public List<OptionDescriptor> getOptions() { return options; }
+
+    /**
+     * 获取选项名到 OptionDescriptor 的映射。
+     *
+     * @return nameToOptionMap
+     */
     public Map<String, OptionDescriptor> getNameToOptionMap() { return nameToOptionMap; }
+
+    /**
+     * 获取所有布尔类型的选项名称集合。
+     *
+     * @return boolOptionNames 集合
+     */
     public Set<String> getBoolOptionNames() { return boolOptionNames; }
+
+    /**
+     * 获取必填选项组列表。
+     *
+     * @return requiredOptionGroups 列表
+     */
     public List<List<String>> getRequiredOptionGroups() { return requiredOptionGroups; }
+
+    /**
+     * 获取位置变量描述符。
+     *
+     * @return varsDescriptor，未定义返回 null
+     */
     public VarsDescriptor getVarsDescriptor() { return varsDescriptor; }
 }

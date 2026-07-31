@@ -18,6 +18,18 @@ import java.util.regex.Pattern;
  */
 public class CommandValidator {
 
+    /**
+     * 工具类私有构造函数。
+     */
+    private CommandValidator() {
+    }
+
+    /**
+     * 校验解析出的命令行选项和位置变量是否合法。
+     *
+     * @param parseResult 解析结果 ParseResult
+     * @param descriptor  命令描述符
+     */
     public static void validate(CommandLineParser.ParseResult parseResult, CommandDescriptor descriptor) {
         Map<String, String> optionValues = parseResult.optionValues();
         String primaryCmd = descriptor.getCommandNames().iterator().next();

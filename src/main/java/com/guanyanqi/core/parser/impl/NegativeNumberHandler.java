@@ -13,6 +13,12 @@ import com.guanyanqi.core.parser.*;
  */
 public class NegativeNumberHandler implements TokenHandler {
 
+    /**
+     * 创建负数识别处理器实例。
+     */
+    public NegativeNumberHandler() {
+    }
+
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
         if (state.isTerminatorSeen()) {

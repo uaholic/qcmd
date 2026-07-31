@@ -32,6 +32,12 @@ public class ConverterRegistry {
     // 定义全局默认的日期时间格式化器
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     * 工具类私有构造函数。
+     */
+    private ConverterRegistry() {
+    }
+
     static {
         // 在静态初始化块中注册默认的转换器
         register(String.class, a -> a); // 对String类型，转换器直接返回输入值
@@ -64,6 +70,7 @@ public class ConverterRegistry {
      * @param type 要转换的类型的Class对象
      * @return 给定类型的QStringConverter，如果未找到返回null
      */
+    @SuppressWarnings("unchecked")
     public static <T> QStringConverter<T> getConverter(Class<T> type) {
         return (QStringConverter<T>) converters.get(type);
     }

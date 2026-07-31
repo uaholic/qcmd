@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Java 16+ Record 不可变类的元数据提取与规范构造器（Canonical Constructor）绑定策略。
  *
- * <p>核心机制说明：
+ * <p>核心机制说明：</p>
  * 1. <b>不可变性与规范构造器</b>：Record 类的字段全部为 private final，没有无参构造函数与 setter 方法。
  *    因此必须通过反射获取其规范构造函数（Canonical Constructor），并按编译期定义的组件顺序传入参数数组。
  * 2. <b>注解级联提取（Annotation Cascading）</b>：
@@ -29,6 +29,12 @@ import java.util.Map;
  * @author guanyanqi
  */
 public class RecordBindingStrategy implements CommandBindingStrategy {
+
+    /**
+     * 创建 Record 绑定策略实例。
+     */
+    public RecordBindingStrategy() {
+    }
 
     @Override
     public void extractMetadata(Class<?> targetClass, CommandDescriptor descriptor) {
@@ -124,6 +130,10 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
     /**
      * 级联提取 @Parameter 注解。
      * 优先尝试 RecordComponent 本身，若为空则顺查底层 Field 与 Accessor 方法。
+     *
+     * @param comp        Record 组件
+     * @param recordClass Record 目标类 Class
+     * @return 提取到的 Parameter 注解实例，未找到返回 null
      */
     public static Parameter getParameterAnnotation(RecordComponent comp, Class<?> recordClass) {
         Parameter param = comp.getAnnotation(Parameter.class);
@@ -143,6 +153,10 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
     /**
      * 级联提取 @Vars 注解。
      * 优先尝试 RecordComponent 本身，若为空则顺查底层 Field 与 Accessor 方法。
+     *
+     * @param comp        Record 组件
+     * @param recordClass Record 目标类 Class
+     * @return 提取到的 Vars 注解实例，未找到返回 null
      */
     public static Vars getVarsAnnotation(RecordComponent comp, Class<?> recordClass) {
         Vars varsAnno = comp.getAnnotation(Vars.class);
@@ -161,6 +175,9 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
 
     /**
      * 为基本类型生成默认零值，防止 Record 规范构造函数反射调用报 IllegalArgumentException。
+     *
+     * @param type 目标类型 Class
+     * @return 基本类型默认零值对象
      */
     private static Object getDefaultPrimitiveValue(Class<?> type) {
         if (type == boolean.class) return false;

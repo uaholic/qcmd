@@ -12,6 +12,12 @@ import com.guanyanqi.core.parser.*;
  */
 public class BooleanFlagHandler implements TokenHandler {
 
+    /**
+     * 创建布尔开关处理器实例。
+     */
+    public BooleanFlagHandler() {
+    }
+
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
         if (state.isTerminatorSeen()) {

@@ -17,16 +17,22 @@ import java.util.*;
  * <p>若需自定义解析策略，推荐使用 {@code QCmd.of(args).withTokenHandlers(...)}，
  * 或直接调用 {@code TokenHandlerChain.builder()...build().execute(args, descriptor)}。
  * </p>
- *
+
  * @author guanyanqi
  */
 public class CommandLineParser {
 
     /**
+     * 工具类私有构造函数。
+     */
+    private CommandLineParser() {
+    }
+
+    /**
      * 命令行 Token 解析后的封装领域模型。
      *
      * @param commandName    命令名称
-     * @param optionValues   选项名 -> 原始字符串值的映射表
+     * @param optionValues   选项名 -&gt; 原始字符串值的映射表
      * @param positionalVars 剩余未具名位置变量列表
      */
     public record ParseResult(

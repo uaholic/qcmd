@@ -13,6 +13,12 @@ import com.guanyanqi.core.parser.*;
  */
 public class TerminatorHandler implements TokenHandler {
 
+    /**
+     * 创建终止符处理器实例。
+     */
+    public TerminatorHandler() {
+    }
+
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
         if (!"--".equals(context.currentToken()) || state.isTerminatorSeen()) {

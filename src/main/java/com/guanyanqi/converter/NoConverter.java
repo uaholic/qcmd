@@ -22,6 +22,12 @@ package com.guanyanqi.converter;
 public class NoConverter implements QStringConverter<String> {
 
     /**
+     * 创建 NoConverter 实例。
+     */
+    public NoConverter() {
+    }
+
+    /**
      * 将给定的字符串值直接返回，不进行任何转换。
      *
      * @param value 待转换的字符串值

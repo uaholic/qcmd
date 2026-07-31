@@ -17,9 +17,31 @@ import java.util.List;
  */
 public class CliAppExample {
 
+    /**
+     * 示例创建 CLI 示范类构造器。
+     */
+    public CliAppExample() {
+    }
+
+    /**
+     * 服务器配置 Record 数据载体。
+     *
+     * @param host 主机名
+     * @param port 端口号
+     */
     public record ServerConfig(String host, int port) {}
 
+    /**
+     * 自定义服务器配置转换器。
+     */
     public static class ServerConfigConverter implements QStringConverter<ServerConfig> {
+
+        /**
+         * 创建转换器实例。
+         */
+        public ServerConfigConverter() {
+        }
+
         @Override
         public ServerConfig convert(String value) {
             String[] parts = value.split(":");
@@ -27,6 +49,15 @@ public class CliAppExample {
         }
     }
 
+    /**
+     * 示例 Deploy 命令行配置描述 Record。
+     *
+     * @param server    目标服务器配置
+     * @param env       目标部署环境
+     * @param timeout   超时时间
+     * @param dryRun    是否演练模式
+     * @param artifacts 产物路径列表
+     */
     @Cmd(names = {"deploy"}, desc = "部署云端应用服务的核心指令")
     public record DeployCommand(
             @Parameter(names = {"-s", "--server"}, required = true, converter = ServerConfigConverter.class, desc = "目标服务器信息 (host:port)")
@@ -45,6 +76,11 @@ public class CliAppExample {
             List<String> artifacts
     ) {}
 
+    /**
+     * 主函数运行示例入口。
+     *
+     * @param args 命令行入参
+     */
     public static void main(String[] args) {
         String[] mockCliArgs = new String[]{
                 "deploy",
