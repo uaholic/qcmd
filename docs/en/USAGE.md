@@ -256,5 +256,5 @@ TokenHandlerChain.Builder builder = TokenHandlerChain.builder()
 
 ## Related Docs
 
-- [Architecture](en/ARCHITECTURE.md)
-- [Extending](en/EXTENDING.md)
+- [Architecture](ARCHITECTURE.md)
+- [Extending](EXTENDING.md)
