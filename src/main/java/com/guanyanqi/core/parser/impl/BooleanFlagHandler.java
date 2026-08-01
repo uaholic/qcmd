@@ -1,5 +1,6 @@
 package com.guanyanqi.core.parser.impl;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
 /**
@@ -24,7 +25,7 @@ public class BooleanFlagHandler implements TokenHandler {
             return null;
         }
         String token = context.currentToken();
-        if (!token.startsWith("-")) {
+        if (!token.startsWith(Constants.SINGLE_DASH)) {
             return null;
         }
         if (context.descriptor().getBoolOptionNames().contains(token)) {

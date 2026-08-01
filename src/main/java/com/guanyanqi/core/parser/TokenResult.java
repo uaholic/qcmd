@@ -1,5 +1,7 @@
 package com.guanyanqi.core.parser;
 
+import com.guanyanqi.constant.Constants;
+
 /**
  * Token 处理器返回的结构化结果。
  * <p>
@@ -39,7 +41,7 @@ public record TokenResult(
      * @return 构造好的 TokenResult
      */
     public static TokenResult boolFlag(String name, int nextIndex) {
-        return new TokenResult(name, "true", nextIndex, TokenKind.BOOL_FLAG);
+        return new TokenResult(name, Constants.BOOL_TRUE_STR, nextIndex, TokenKind.BOOL_FLAG);
     }
 
     /**
@@ -50,7 +52,7 @@ public record TokenResult(
      * @return 构造好的 TokenResult
      */
     public static TokenResult positional(String value, int nextIndex) {
-        return new TokenResult("", value, nextIndex, TokenKind.POSITIONAL);
+        return new TokenResult(Constants.EMPTY_STRING, value, nextIndex, TokenKind.POSITIONAL);
     }
 
     /**
@@ -60,6 +62,6 @@ public record TokenResult(
      * @return 构造好的 TokenResult
      */
     public static TokenResult skip(int nextIndex) {
-        return new TokenResult("", "", nextIndex, TokenKind.SKIP);
+        return new TokenResult(Constants.EMPTY_STRING, Constants.EMPTY_STRING, nextIndex, TokenKind.SKIP);
     }
 }

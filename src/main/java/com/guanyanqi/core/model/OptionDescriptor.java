@@ -1,5 +1,6 @@
 package com.guanyanqi.core.model;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.converter.NoConverter;
 import com.guanyanqi.converter.QStringConverter;
 
@@ -54,10 +55,10 @@ public class OptionDescriptor {
                             String targetName,
                             AnnotatedElement rawElement) {
         this.names = Objects.requireNonNull(names, "Option names must not be null");
-        this.desc = desc != null ? desc : "";
+        this.desc = desc != null ? desc : Constants.EMPTY_STRING;
         this.required = required;
-        this.valueValidRegex = valueValidRegex != null ? valueValidRegex : "";
-        this.valueValidDesc = valueValidDesc != null ? valueValidDesc : "";
+        this.valueValidRegex = valueValidRegex != null ? valueValidRegex : Constants.EMPTY_STRING;
+        this.valueValidDesc = valueValidDesc != null ? valueValidDesc : Constants.EMPTY_STRING;
         this.converterClass = converterClass != null ? converterClass : NoConverter.class;
         this.type = Objects.requireNonNull(type, "Option type must not be null");
         this.genericType = genericType != null ? genericType : type;

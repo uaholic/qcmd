@@ -1,12 +1,13 @@
 package com.guanyanqi.core.parser.impl;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
 /**
- * 处理 POSIX {@code --} 终止符。
+ * 处理 POSIX 标准选项终止符 {@code --}。
  * <p>
- * 遇到 {@code --} 时设置终止标志，后续所有 token 均由 {@link PositionalHandler} 处理，
- * 不再作为选项解析。
+ * 当遇到独立的 {@code --} token 时，设置终止符标志，
+ * 告诉解析链后续的所有 token（即使以 {@code -} 开头）都强制识别为位置参数。
  * </p>
  *
  * @author guanyanqi
@@ -14,17 +15,18 @@ import com.guanyanqi.core.parser.*;
 public class TerminatorHandler implements TokenHandler {
 
     /**
-     * 创建终止符处理器实例。
+     * 创建选项终止符处理器实例。
      */
     public TerminatorHandler() {
     }
 
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
-        if (!"--".equals(context.currentToken()) || state.isTerminatorSeen()) {
-            return null;
+        String token = context.currentToken();
+        if (Constants.DOUBLE_DASH.equals(token)) {
+            state.setTerminatorSeen(true);
+            return TokenResult.skip(context.currentIndex() + 1);
         }
-        state.setTerminatorSeen(true);
-        return TokenResult.skip(context.currentIndex() + 1);
+        return null;
     }
 }

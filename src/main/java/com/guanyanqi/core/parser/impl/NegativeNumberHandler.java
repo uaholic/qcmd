@@ -1,12 +1,13 @@
 package com.guanyanqi.core.parser.impl;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
 /**
- * 处理看起来像负数的 token（如 {@code -3.14}、{@code -100}）。
+ * 负数位置参数防误判处理器。
  * <p>
- * 当一个以 {@code -} 开头且第二个字符为数字的 token 不是已声明的选项名时，
- * 将其归为位置变量而非未知选项。
+ * 当 token 匹配负数格式（如 {@code -5}、{@code -3.14}）且未注册为已知选项时，
+ * 将其排除在选项识别之外，避免将负数误判为未知选项。
  * </p>
  *
  * @author guanyanqi
@@ -14,7 +15,7 @@ import com.guanyanqi.core.parser.*;
 public class NegativeNumberHandler implements TokenHandler {
 
     /**
-     * 创建负数识别处理器实例。
+     * 创建负数处理器实例。
      */
     public NegativeNumberHandler() {
     }
@@ -25,25 +26,16 @@ public class NegativeNumberHandler implements TokenHandler {
             return null;
         }
         String token = context.currentToken();
-        if (!token.startsWith("-")) {
+        if (!token.startsWith(Constants.SINGLE_DASH) || token.length() <= 1) {
             return null;
         }
-        if (!looksLikeNegativeNumber(token)) {
-            return null;
+        char c = token.charAt(1);
+        if (Character.isDigit(c)) {
+            boolean isRegisteredOption = context.descriptor().getNameToOptionMap().containsKey(token);
+            if (!isRegisteredOption) {
+                return TokenResult.positional(token, context.currentIndex() + 1);
+            }
         }
-        // 让这一 token 已被 EqualsSignOptionHandler 或 BooleanFlagHandler 匹配
-        // 只有不在已知选项中的负数才归为位置变量
-        if (context.descriptor().getNameToOptionMap().containsKey(token)) {
-            return null;
-        }
-        return TokenResult.positional(token, context.currentIndex() + 1);
-    }
-
-    private static boolean looksLikeNegativeNumber(String token) {
-        if (token == null || token.length() < 2 || token.charAt(0) != '-') {
-            return false;
-        }
-        char second = token.charAt(1);
-        return second >= '0' && second <= '9';
+        return null;
     }
 }

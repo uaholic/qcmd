@@ -1,5 +1,6 @@
 package com.guanyanqi.core.model;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.converter.NoConverter;
 import com.guanyanqi.converter.QStringConverter;
 
@@ -40,7 +41,7 @@ public class VarsDescriptor {
                           Type genericType,
                           String targetName,
                           AnnotatedElement rawElement) {
-        this.desc = desc != null ? desc : "";
+        this.desc = desc != null ? desc : Constants.EMPTY_STRING;
         this.elementConverterClass = elementConverterClass != null ? elementConverterClass : NoConverter.class;
         this.type = Objects.requireNonNull(type, "Vars type must not be null");
         this.genericType = genericType != null ? genericType : type;

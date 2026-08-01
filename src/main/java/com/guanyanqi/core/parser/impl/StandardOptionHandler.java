@@ -1,5 +1,6 @@
 package com.guanyanqi.core.parser.impl;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 import com.guanyanqi.exception.QCmdException;
 
@@ -26,10 +27,9 @@ public class StandardOptionHandler implements TokenHandler {
             return null;
         }
         String token = context.currentToken();
-        if (!token.startsWith("-")) {
+        if (!token.startsWith(Constants.SINGLE_DASH)) {
             return null;
         }
-        // 只处理尚未被其他 handler 匹配的以 - 开头的 token
         if (!context.hasNext()) {
             throw new QCmdException("参数选项 [" + token + "] 缺少对应的参数值");
         }

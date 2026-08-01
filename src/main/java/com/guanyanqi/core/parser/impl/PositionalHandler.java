@@ -1,30 +1,28 @@
 package com.guanyanqi.core.parser.impl;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
 /**
- * 兜底处理器：将不以 {@code -} 开头的 token（或终止符之后的所有 token）
- * 归集为位置变量（Positional Variables）。
+ * 处理位置参数（不带 {@code -} 前缀的普通非选项 token）。
+ * <p>
+ * 如果遇到了 {@code --} 终止符，所有后续 token（包括以 {@code -} 开头的）均按位置参数处理。
+ * </p>
  *
  * @author guanyanqi
  */
 public class PositionalHandler implements TokenHandler {
 
     /**
-     * 创建位置变量兜底处理器实例。
+     * 创建位置参数处理器实例。
      */
     public PositionalHandler() {
     }
 
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
-        // 终止符之后：无论是否以 - 开头，全部作为位置变量
-        if (state.isTerminatorSeen()) {
-            return TokenResult.positional(context.currentToken(), context.currentIndex() + 1);
-        }
-        // 非终止模式下：只处理不以 - 开头的普通 token
         String token = context.currentToken();
-        if (!token.startsWith("-")) {
+        if (state.isTerminatorSeen() || !token.startsWith(Constants.SINGLE_DASH)) {
             return TokenResult.positional(token, context.currentIndex() + 1);
         }
         return null;

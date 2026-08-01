@@ -1,5 +1,6 @@
 package com.guanyanqi.core.parser.impl;
 
+import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
 /**
@@ -24,10 +25,10 @@ public class EqualsSignOptionHandler implements TokenHandler {
             return null;
         }
         String token = context.currentToken();
-        if (!token.startsWith("-") || token.startsWith("---")) {
+        if (!token.startsWith(Constants.SINGLE_DASH) || token.startsWith(Constants.TRIPLE_DASH)) {
             return null;
         }
-        int eqIdx = token.indexOf('=');
+        int eqIdx = token.indexOf(Constants.COMMON_KV_SPLIT_REG);
         if (eqIdx <= 1) {
             return null;
         }
