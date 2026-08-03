@@ -259,11 +259,12 @@ QCmd.of(args)
     .parse(MyCmd.class);
 ```
 
-内置 6 个处理器按执行顺序：
+内置 7 个处理器按执行顺序：
 
 | 处理器 | 职责 |
 |---|---|
 | `TerminatorHandler` | `--` 终止符 |
+| `BuiltInActionHandler` | `-h` / `--help` 与 `-V` / `--version` |
 | `EqualsSignOptionHandler` | `--key=value` 等号语法 |
 | `BooleanFlagHandler` | 布尔开关 |
 | `NegativeNumberHandler` | 负数识别 |
@@ -283,18 +284,20 @@ TokenHandlerChain.Builder builder = TokenHandlerChain.builder()
     .append(new MyCustomHandler());                  // 追加到末尾
 ```
 
-### 支持的 POSIX/GNU 风格语法
+### 命令行写法
+
+qcmd 借鉴了几种常见的 Unix 风格命令行约定，当前支持以下具体写法：
 
 | 特性 | 示例 | 说明 |
 |---|---|---|
 | 标准选项 | `deploy -e prod` | 空格分隔 |
-| 等号语法 | `deploy --env=prod` | GNU 风格 |
+| 等号语法 | `deploy --env=prod` | 选项和值写在同一 token 中 |
 | 布尔开关 | `deploy -d` | 不消费值 |
 | 终止符 | `deploy -- -v` | `--` 后全作位置变量 |
 | 负数参数 | `deploy -t -30` | 不被误认为选项 |
 | 短选项等号 | `deploy -e=prod` | 短选项也支持 |
 
-qcmd 目前不声称完整 POSIX/GNU 兼容，也不处理 `-abc` 短选项组合。带值选项后如果紧跟另一个 `-` 开头的 token，会报告前一个选项缺值；负十进制数例外。如需传递普通的 `-` 开头字符串，请使用 `--name=-literal`。
+上表就是 qcmd 当前的语法范围。`-abc` 短选项组合暂未实现；带值选项后如果紧跟另一个 `-` 开头的 token，会报告前一个选项缺值，负十进制数例外。如需传递普通的 `-` 开头字符串，请使用 `--name=-literal`。
 
 ---
 

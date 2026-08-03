@@ -4,7 +4,7 @@ import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
 /**
- * 处理 GNU 风格的等号分隔选项（{@code --key=value} 或 {@code -k=value}）。
+ * 处理等号分隔选项（{@code --key=value} 或 {@code -k=value}）。
  * <p>
  * 将等号前后拆分为选项名和选项值，无需消费后续 token。
  * </p>

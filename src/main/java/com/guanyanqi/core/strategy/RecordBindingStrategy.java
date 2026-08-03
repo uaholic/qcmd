@@ -62,18 +62,16 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
                         comp
                 );
                 descriptor.registerOption(option);
-            } else {
-                if (varsAnnotation != null) {
-                    VarsDescriptor vars = new VarsDescriptor(
-                            varsAnnotation.desc(),
-                            varsAnnotation.elementConverter(),
-                            comp.getType(),
-                            comp.getGenericType(),
-                            comp.getName(),
-                            comp
-                    );
-                    descriptor.registerVars(vars);
-                }
+            } else if (varsAnnotation != null) {
+                VarsDescriptor vars = new VarsDescriptor(
+                        varsAnnotation.desc(),
+                        varsAnnotation.elementConverter(),
+                        comp.getType(),
+                        comp.getGenericType(),
+                        comp.getName(),
+                        comp
+                );
+                descriptor.registerVars(vars);
             }
         }
     }

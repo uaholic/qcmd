@@ -9,17 +9,12 @@ import com.guanyanqi.exception.QCmdException;
  * <p>
  * 消费当前选项名作为选项名，下一个 token 作为选项值。
  * 若已是最后一个 token 且缺少参数值，则抛出异常。
+ * 若下一 token 是已声明的选项或终止符，也应报缺少值。
  * </p>
  *
  * @author guanyanqi
  */
 public class StandardOptionHandler implements TokenHandler {
-
-    /**
-     * 创建标准带值选项处理器实例。
-     */
-    public StandardOptionHandler() {
-    }
 
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {

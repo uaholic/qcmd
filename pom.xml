@@ -6,11 +6,11 @@
 
     <groupId>com.guanyanqi</groupId>
     <artifactId>qcmd</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <packaging>jar</packaging>
 
     <name>qcmd</name>
-    <description>A lightweight, zero-dependency Java command line parser supporting POJO and Java 16+ Record.</description>
+    <description>A zero-dependency Java 17+ command-line parser with annotation-driven POJO and Record binding.</description>
     <url>https://github.com/uaholic/qcmd</url>
 
     <licenses>

@@ -6,11 +6,11 @@ import com.guanyanqi.exception.QCmdException;
 import java.util.*;
 
 /**
- * POSIX / GNU 风格命令行参数解析器（委托给可插拔的 TokenHandler 链）。
+ * 常见命令行参数写法的解析器（委托给可插拔的 TokenHandler 链）。
  *
  * <p>内部使用 {@link TokenHandlerChain#defaults()} 执行解析，
- * 等价于按序调用 6 个内置 handler：
- * TerminatorHandler → EqualsSignOptionHandler → BooleanFlagHandler →
+ * 等价于按序调用 7 个内置 handler：
+ * TerminatorHandler → BuiltInActionHandler → EqualsSignOptionHandler → BooleanFlagHandler →
  * NegativeNumberHandler → StandardOptionHandler → PositionalHandler。
  * </p>
  *
@@ -34,15 +34,22 @@ public class CommandLineParser {
      * @param commandName    命令名称
      * @param optionValues   选项名 -&gt; 原始字符串值的映射表
      * @param positionalVars 剩余未具名位置变量列表
+     * @param actionOption   内置动作选项，未触发时为 null
      */
     public record ParseResult(
             String commandName,
             Map<String, String> optionValues,
-            List<String> positionalVars
+            List<String> positionalVars,
+            String actionOption
     ) {
-        /**
-         * 为解析结果建立防御性副本，避免外部修改解析器内部状态。
-         */
+        /** 三参构造，兼容无 action 的场景。 */
+        public ParseResult(String commandName,
+                           Map<String, String> optionValues,
+                           List<String> positionalVars) {
+            this(commandName, optionValues, positionalVars, null);
+        }
+
+        /** 保存解析结果快照，不暴露解析器内部的可变集合。 */
         public ParseResult {
             optionValues = Collections.unmodifiableMap(new LinkedHashMap<>(optionValues));
             positionalVars = List.copyOf(positionalVars);

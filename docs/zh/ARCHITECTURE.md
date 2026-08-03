@@ -15,8 +15,8 @@ QCmd.of(args)
   │
   ├─ 1. CommandDescriptor(Class)          ← 反射提取注解元数据
   ├─ 2. formatter.format(descriptor)      ← 生成帮助文本（可替换策略）
-   ├─ 3. help/version 动作短路        ← 正常显示后退出
-   ├─ 4. TokenHandlerChain.execute(...)    ← Token 分词与分流（可扩展链）
+   ├─ 3. TokenHandlerChain.execute(...)    ← Token 分流，含内置动作识别
+   ├─ 4. ACTION 结果短路                   ← 正常显示 help/version 后退出
    ├─ 5. CommandValidator.validate(...)    ← 参数规则校验
    └─ 6. InstanceBinder.bind(...)          ← 反射构造目标实例
        │
@@ -103,16 +103,17 @@ interface TokenHandler {
 
 ### 默认处理器链
 
-6 个内置 handler 按执行顺序：
+7 个内置 handler 按执行顺序：
 
 | 顺序 | Handler | 匹配条件 | 动作 |
 |---|---|---|---|
 | 1 | `TerminatorHandler` | `"--"` | 设终止标志，跳过 |
-| 2 | `EqualsSignOptionHandler` | `-x` 且含 `=` | 拆分为 key=value 选项 |
-| 3 | `BooleanFlagHandler` | 已知 bool 选项 | 存 `"true"` |
-| 4 | `NegativeNumberHandler` | `-\d` 且非已知选项 | 归为位置变量 |
-| 5 | `StandardOptionHandler` | 其他 `-` 前缀 | 已知选项安全消费值；未知选项留给校验器 |
-| 6 | `PositionalHandler` | 非 `-` 前缀 或终止后 | 归为位置变量 |
+| 2 | `BuiltInActionHandler` | help/version 且未被用户覆盖 | 记录 ACTION 并终止解析 |
+| 3 | `EqualsSignOptionHandler` | `-x` 且含 `=` | 拆分为 key=value 选项 |
+| 4 | `BooleanFlagHandler` | 已知 bool 选项 | 存 `"true"` |
+| 5 | `NegativeNumberHandler` | `-\d` 且非已知选项 | 归为位置变量 |
+| 6 | `StandardOptionHandler` | 其他 `-` 前缀 | 已知选项安全消费值；未知选项留给校验器 |
+| 7 | `PositionalHandler` | 非 `-` 前缀 或终止后 | 归为位置变量 |
 
 ### 可扩展性
 
@@ -289,6 +290,7 @@ com.guanyanqi
 │   │   ├── TokenHandlerChain.java     ← 处理器链 + Builder
 │   │   └── impl/
 │   │       ├── TerminatorHandler.java
+│   │       ├── BuiltInActionHandler.java
 │   │       ├── EqualsSignOptionHandler.java
 │   │       ├── BooleanFlagHandler.java
 │   │       ├── NegativeNumberHandler.java
@@ -319,7 +321,7 @@ com.guanyanqi
 | 零依赖 | 无任何外部运行时依赖 |
 | 领域模型抽象 | `OptionDescriptor` / `VarsDescriptor` 通过 `AnnotatedElement` 屏蔽 Field vs RecordComponent |
 | 策略模式 | `CommandBindingStrategy` 接口 + Factory + 两个具体实现 |
-| 责任链模式 | `TokenHandler` 接口 + `TokenHandlerChain` + 6 个内置 handler |
+| 责任链模式 | `TokenHandler` 接口 + `TokenHandlerChain` + 7 个内置 handler |
 | 适配器模式 | `HelpFormatter` 接口 + 多输出格式实现（终端 / Markdown / 自定义） |
 | 不可变数据 | 解析结果使用 record + 只读集合，描述元数据构建后冻结 |
 | 开放扩展 | `ConverterRegistry`、`TokenHandlerChain.Builder`、`withTokenHandlers()`、`withHelpFormatter()` |

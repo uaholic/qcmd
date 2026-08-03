@@ -1,4 +1,4 @@
-# 🚀 qcmd: Zero-Dependency, Record-First CLI Argument Parser for Java 17+
+# 🚀 qcmd: Zero-Dependency CLI Argument Parser for Java 17+
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)]()
@@ -11,9 +11,9 @@
 
 ## 中文
 
-**qcmd**（Quick Command）是一个为现代 Java 17+ 打造的极简、轻量、**零外部依赖**、**原生支持 Java Record** 的注解驱动命令行参数解析框架。
+**qcmd**（Quick Command）是一个面向 Java 17+ 的小型、**零运行时依赖**、注解驱动命令行参数解析库，原生支持 Java Record。
 
-能用一行代码，将复杂 Linux 命令行参数、标志位、正则校验、位置变量，直接装配到 POJO 或不可变 Record 中。
+它把常见命令行选项、布尔开关和位置参数映射到 POJO 或不可变 Record，并提供必填与正则校验。
 
 ### 核心特性
 
@@ -21,10 +21,10 @@
 |---|---|
 | 🛡️ **零依赖** | 不引入任何第三方库，无依赖冲突 |
 | 💎 **Record 原生支持** | 通过 RecordComponent + Canonical Constructor 直接绑定不可变 Record |
-| ⚡ **常用 POSIX/GNU 风格语法** | `--key=value`、`--` 终止符、负数识别（`-a -123.45`） |
+| ⚡ **熟悉的命令行写法** | 支持 `--key=value`、`--` 终止符和负数参数（`-a -123.45`） |
 | 🎨 **类型转换管线** | 基本类型 / Enum / Collection / Map / 自定义 Converter / String 构造器兜底 |
 | 🔍 **校验与帮助** | `required` 必填、`valueValidRegex` 正则、MissingParameterException / InvalidParameterValueException / UnknownOptionException |
-| 🔌 **全链路可扩展** | Token 处理器链、HelpFormatter 帮助格式、Converter 类型转换均支持自定义 |
+| 🔌 **主要环节可扩展** | 可自定义 Token 处理器链、HelpFormatter 和 Converter |
 
 ### 快速引入
 
@@ -32,7 +32,7 @@
 <dependency>
     <groupId>com.guanyanqi</groupId>
     <artifactId>qcmd</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 
@@ -178,7 +178,7 @@ QCmd.of(args)
 
 ## English
 
-**qcmd** (Quick Command) is a minimalist, zero-dependency, annotation-driven CLI argument parser for modern Java 17+. It maps command-line options, flags, regex rules, and positional variables directly onto POJOs or immutable Records — in a single line of code.
+**qcmd** (Quick Command) is a small, zero-runtime-dependency, annotation-driven CLI argument parser for Java 17+ with native Record support. It maps common options, boolean flags, and positional arguments onto POJOs or immutable Records, with required-value and regex validation.
 
 ### Features
 
@@ -186,10 +186,10 @@ QCmd.of(args)
 |---|---|
 | 🛡️ **Zero Dependencies** | No Guava, no Commons — zero runtime dependencies |
 | 💎 **Native Record Support** | Direct binding via RecordComponent + Canonical Constructor |
-| ⚡ **Common POSIX/GNU-style syntax** | `--key=value` syntax, `--` terminator, negative number detection |
+| ⚡ **Familiar CLI forms** | `--key=value`, the `--` terminator, and negative numeric values |
 | 🎨 **Type Conversion Pipeline** | Primitives, enums, collections, maps, custom converters, String-ctor fallback |
 | 🔍 **Validation & Help** | Required params, regex validation, typed exceptions, auto-generated help |
-| 🔌 **Fully Extensible** | Custom token handlers, help formatters, and type converters |
+| 🔌 **Focused Extension Points** | Custom token handlers, help formatters, and type converters |
 
 ### Quick Start
 
@@ -197,7 +197,7 @@ QCmd.of(args)
 <dependency>
     <groupId>com.guanyanqi</groupId>
     <artifactId>qcmd</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 

@@ -147,6 +147,24 @@ public class HelpFormatterTest {
         assertEquals("versioned 2.4.0", parsed.outputText());
     }
 
+    /** 动作选项命中后立即结束解析，不再处理后续缺值选项。 */
+    @Test
+    public void testBuiltInActionStopsParsing() {
+        ParsedCommand<VersionedCmd> parsed = QCmd.of(
+                new String[]{"versioned", "--help", "--required"}).parse(VersionedCmd.class);
+
+        assertEquals(ParseAction.SHOW_HELP, parsed.action());
+    }
+
+    /** 多个动作同时出现时，第一个动作决定结果。 */
+    @Test
+    public void testFirstBuiltInActionWins() {
+        ParsedCommand<VersionedCmd> parsed = QCmd.of(
+                new String[]{"versioned", "--help", "--version"}).parse(VersionedCmd.class);
+
+        assertEquals(ParseAction.SHOW_HELP, parsed.action());
+    }
+
     /** 静态 help API 不需要伪造一组合法命令行参数。 */
     @Test
     public void testStandaloneHelpApi() {
@@ -184,11 +202,13 @@ public class HelpFormatterTest {
     /** QCmd 的扩展点对 null 提供即时、明确的参数校验。 */
     @Test
     public void testNullCustomizersAreRejected() {
-        assertThrows(NullPointerException.class, () ->
+        assertThrows(QCmdException.class, () ->
                 QCmd.of(new String[]{"demo"}).withHelpFormatter(null));
-        assertThrows(NullPointerException.class, () ->
+        assertThrows(QCmdException.class, () ->
                 QCmd.of(new String[]{"demo"}).withTokenHandlers(null));
-        assertThrows(NullPointerException.class, () ->
+        assertThrows(QCmdException.class, () ->
                 QCmd.of(new String[]{"demo"}).withTokenHandlers(builder -> null));
+        assertThrows(QCmdException.class, () ->
+                QCmd.help(HelpDemoCmd.class, null));
     }
 }

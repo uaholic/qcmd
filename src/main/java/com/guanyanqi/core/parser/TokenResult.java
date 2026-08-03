@@ -64,4 +64,15 @@ public record TokenResult(
     public static TokenResult skip(int nextIndex) {
         return new TokenResult(Constants.EMPTY_STRING, Constants.EMPTY_STRING, nextIndex, TokenKind.SKIP);
     }
+
+    /**
+     * 创建内置动作选项结果（如 --help、--version）。
+     *
+     * @param actionName 动作选项名称（如 "--help"）
+     * @param nextIndex  下一个待处理 token 的下标
+     * @return 构造好的 TokenResult
+     */
+    public static TokenResult action(String actionName, int nextIndex) {
+        return new TokenResult(actionName, Constants.EMPTY_STRING, nextIndex, TokenKind.ACTION);
+    }
 }

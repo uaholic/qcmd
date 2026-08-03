@@ -17,5 +17,8 @@ public enum TokenKind {
     POSITIONAL,
 
     /** 跳过当前 token（如 "--" 终止符本身不产生值） */
-    SKIP
+    SKIP,
+
+    /** 内置动作选项（如 --help、--version），不产生选项值 */
+    ACTION
 }

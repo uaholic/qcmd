@@ -36,10 +36,11 @@ public final class TokenHandlerChain {
     }
 
     /**
-     * 返回预构建的默认处理器链，覆盖 qcmd 支持的常用 POSIX/GNU 风格语法。
+     * 返回预构建的默认处理器链，覆盖 qcmd 当前支持的命令行写法。
      * <p>顺序（每个 token 按此顺序匹配）：</p>
      * <ol>
      *   <li>{@link TerminatorHandler} — "--" 终止符</li>
+     *   <li>{@link BuiltInActionHandler} — help/version 动作</li>
      *   <li>{@link EqualsSignOptionHandler} — "--key=value" 等号语法</li>
      *   <li>{@link BooleanFlagHandler} — bool 开关</li>
      *   <li>{@link NegativeNumberHandler} — 负数识别</li>
@@ -52,6 +53,7 @@ public final class TokenHandlerChain {
     public static TokenHandlerChain defaults() {
         return new TokenHandlerChain(List.of(
                 new TerminatorHandler(),
+                new BuiltInActionHandler(),
                 new EqualsSignOptionHandler(),
                 new BooleanFlagHandler(),
                 new NegativeNumberHandler(),
@@ -114,7 +116,7 @@ public final class TokenHandlerChain {
             }
         }
 
-        return new CommandLineParser.ParseResult(cmd, state.optionValues, state.positionalVars);
+        return new CommandLineParser.ParseResult(cmd, state.optionValues, state.positionalVars, state.actionOption);
     }
 
     /**
@@ -131,7 +133,7 @@ public final class TokenHandlerChain {
         }
 
         /**
-         * 从默认链初始化构建器（包含全部 6 个内置 handler）。
+         * 从默认链初始化构建器（包含全部 7 个内置 handler）。
          *
          * @return 构建器实例
          */

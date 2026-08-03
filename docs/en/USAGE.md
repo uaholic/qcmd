@@ -252,6 +252,7 @@ QCmd.of(args)
 | Handler | Purpose |
 |---|---|
 | `TerminatorHandler` | `--` terminator |
+| `BuiltInActionHandler` | `-h` / `--help` and `-V` / `--version` |
 | `EqualsSignOptionHandler` | `--key=value` syntax |
 | `BooleanFlagHandler` | Boolean flags |
 | `NegativeNumberHandler` | Negative number detection |
@@ -271,18 +272,20 @@ TokenHandlerChain.Builder builder = TokenHandlerChain.builder()
     .append(new MyCustomHandler());                 // push to back
 ```
 
-### Supported POSIX/GNU-style syntax
+### Command-line forms
+
+qcmd borrows a few familiar Unix-style conventions and currently supports the concrete forms below:
 
 | Feature | Example | Notes |
 |---|---|---|
 | Standard option | `deploy -e prod` | Space-delimited |
-| Equals syntax | `deploy --env=prod` | GNU style |
+| Equals syntax | `deploy --env=prod` | Option and value share one token |
 | Boolean flag | `deploy -d` | No value consumed |
 | Terminator | `deploy -- -v` | Everything after `--` is positional |
 | Negative number | `deploy -t -30` | Not confused with option `-3` |
 | Short option equals | `deploy -e=prod` | Short form also supports = |
 
-qcmd does not claim complete POSIX/GNU compatibility and does not expand combined short options such as `-abc`. If a value-taking option is followed by another dash-prefixed token, qcmd reports the first option as missing its value; negative decimal numbers are the exception. Use equals syntax such as `--name=-literal` for ordinary dash-prefixed string values.
+This table defines qcmd's current syntax surface. Combined short options such as `-abc` are not implemented. If a value-taking option is followed by another dash-prefixed token, qcmd reports the first option as missing its value; negative decimal numbers are the exception. Use equals syntax such as `--name=-literal` for ordinary dash-prefixed string values.
 
 ---
 

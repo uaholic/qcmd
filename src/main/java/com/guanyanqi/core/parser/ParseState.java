@@ -19,29 +19,19 @@ public class ParseState {
     final Map<String, String> optionValues = new LinkedHashMap<>();
     final List<String> positionalVars = new ArrayList<>();
     boolean terminatorSeen = false;
+    /** 检测到的内置动作选项名（如 "--help"、"--version"），未触发为 null */
+    String actionOption;
 
-    /**
-     * 创建默认解析状态容器。
-     */
-    public ParseState() {
-    }
-
-    /**
-     * 是否已遇到终止符 '--'。
-     *
-     * @return 已遇到返回 true，否则返回 false
-     */
     public boolean isTerminatorSeen() {
         return terminatorSeen;
     }
 
-    /**
-     * 设置终止符标志状态。
-     *
-     * @param terminatorSeen 终止符标志
-     */
     public void setTerminatorSeen(boolean terminatorSeen) {
         this.terminatorSeen = terminatorSeen;
+    }
+
+    public String getActionOption() {
+        return actionOption;
     }
 
     /**
@@ -58,8 +48,10 @@ public class ParseState {
             case POSITIONAL:
                 positionalVars.add(result.optionValue());
                 break;
+            case ACTION:
+                actionOption = result.optionName();
+                break;
             case SKIP:
-                // "--" 终止符：不存储任何值，但设置终止标志
                 break;
         }
     }

@@ -93,6 +93,7 @@ QCmd.of(args)
 
 ```
 TerminatorHandler
+  → BuiltInActionHandler
   → EqualsSignOptionHandler
   → BooleanFlagHandler
   → NegativeNumberHandler
@@ -100,7 +101,7 @@ TerminatorHandler
   → PositionalHandler
 ```
 
-First non-null result wins. `PositionalHandler` must be last.
+First non-null result wins. A `BuiltInActionHandler` match ends token scanning, so the first help/version action wins. `PositionalHandler` must be last.
 
 ### Best Practices
 

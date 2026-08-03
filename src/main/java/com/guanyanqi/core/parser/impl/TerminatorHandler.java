@@ -4,7 +4,7 @@ import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
 /**
- * 处理 POSIX 标准选项终止符 {@code --}。
+ * 处理常见的选项终止符 {@code --}。
  * <p>
  * 当遇到独立的 {@code --} token 时，设置终止符标志，
  * 告诉解析链后续的所有 token（即使以 {@code -} 开头）都强制识别为位置参数。

@@ -25,7 +25,7 @@ public class Constants {
     public static final String SINGLE_DASH = "-";
 
     /**
-     * 长选项前缀 / POSIX 终止符字符串 "--"。
+     * 长选项前缀 / 选项终止符字符串 "--"。
      */
     public static final String DOUBLE_DASH = "--";
 

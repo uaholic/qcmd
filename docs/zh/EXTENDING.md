@@ -96,6 +96,7 @@ QCmd.of(args)
 
 ```
 TerminatorHandler
+  → BuiltInActionHandler
   → EqualsSignOptionHandler
   → BooleanFlagHandler
   → NegativeNumberHandler
@@ -103,7 +104,7 @@ TerminatorHandler
   → PositionalHandler
 ```
 
-每个 token 依次通过这些 handler，第一个返回非 null 结果的 handler 胜出。`PositionalHandler` 必须位于链末。
+每个 token 依次通过这些 handler，第一个返回非 null 结果的 handler 胜出。`BuiltInActionHandler` 命中后结束本次 token 扫描，首个 help/version 动作优先；`PositionalHandler` 必须位于链末。
 
 ### 最佳实践
 

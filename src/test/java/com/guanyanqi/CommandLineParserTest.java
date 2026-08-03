@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * CommandLineParser 的 Token 分词与分流专项测试。
  * <p>
- * 覆盖了 8 种核心解析场景，包括标准用法和近期新增的 GNU 扩展语法：
+ * 覆盖核心解析场景，包括空格分隔选项与等号分隔选项：
  * <ul>
  *   <li>空参数 / null 参数的防御</li>
  *   <li>命令名不匹配的检测</li>
@@ -112,7 +112,7 @@ public class CommandLineParserTest {
         assertEquals("-1e3", result.optionValues().get("--name"));
     }
 
-    /** 未知选项在行尾也应报 UnknownOptionException，不应误报为缺少值。 */
+    /** 未知选项在行尾应被 CommandValidator 捕获为 UnknownOptionException。 */
     @Test
     public void testUnknownOptionAtEndOfLine() {
         UnknownOptionException e = assertThrows(UnknownOptionException.class, () ->
@@ -153,7 +153,17 @@ public class CommandLineParserTest {
         assertEquals("second", cmd.name);
     }
 
-    /** GNU 风格等号语法：--key=value 将等号前后拆分为选项名和值 */
+    /** QCmd.of 捕获输入快照，不受调用方后续修改原数组的影响。 */
+    @Test
+    public void testInputArgumentsAreSnapshotted() {
+        String[] args = {"with-vars", "--name", "before"};
+        QCmd session = QCmd.of(args);
+        args[2] = "after";
+
+        assertEquals("before", session.parse(WithVarsCmd.class).value().name);
+    }
+
+    /** 等号分隔写法：--key=value 将等号前后拆分为选项名和值。 */
     @Test
     public void testEqualsSignSyntax() {
         CommandDescriptor desc = new CommandDescriptor(WithVarsCmd.class);

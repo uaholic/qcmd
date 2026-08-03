@@ -13,8 +13,8 @@ QCmd.of(args)
   │
   ├─ 1. CommandDescriptor(Class)          ← reflection-based metadata extraction
   ├─ 2. formatter.format(descriptor)      ← help text (swappable strategy)
-   ├─ 3. help/version action shortcut      ← display and exit normally
-   ├─ 4. TokenHandlerChain.execute(...)    ← token parsing (extensible chain)
+   ├─ 3. TokenHandlerChain.execute(...)    ← token parsing, including built-in actions
+   ├─ 4. ACTION result shortcut             ← display help/version and exit normally
    ├─ 5. CommandValidator.validate(...)    ← rule validation
    └─ 6. InstanceBinder.bind(...)          ← reflection-based instance construction
        │
@@ -95,16 +95,17 @@ interface TokenHandler {
 }
 ```
 
-### Default Chain (6 handlers)
+### Default Chain (7 handlers)
 
 | # | Handler | Match | Action |
 |---|---|---|---|
 | 1 | `TerminatorHandler` | `"--"` | Set termination flag, skip |
-| 2 | `EqualsSignOptionHandler` | `-x` contains `=` | Split into key=value option |
-| 3 | `BooleanFlagHandler` | Known bool option | Store `"true"` |
-| 4 | `NegativeNumberHandler` | `-\d` not a known option | Treat as positional |
-| 5 | `StandardOptionHandler` | Other `-` prefix | Safely consume known-option values; retain unknown options for validation |
-| 6 | `PositionalHandler` | Non-`-` prefix or after `--` | Treat as positional |
+| 2 | `BuiltInActionHandler` | Unshadowed help/version action | Record ACTION and stop parsing |
+| 3 | `EqualsSignOptionHandler` | `-x` contains `=` | Split into key=value option |
+| 4 | `BooleanFlagHandler` | Known bool option | Store `"true"` |
+| 5 | `NegativeNumberHandler` | `-\d` not a known option | Treat as positional |
+| 6 | `StandardOptionHandler` | Other `-` prefix | Safely consume known-option values; retain unknown options for validation |
+| 7 | `PositionalHandler` | Non-`-` prefix or after `--` | Treat as positional |
 
 ### Extensibility
 

@@ -2,8 +2,8 @@ package com.guanyanqi;
 
 import com.guanyanqi.core.*;
 import com.guanyanqi.core.parser.TokenHandlerChain;
+import com.guanyanqi.exception.QCmdException;
 
-import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /**
@@ -57,10 +57,14 @@ public class QCmd {
      * @return 当前 QCmd 实例
      */
     public QCmd withTokenHandlers(UnaryOperator<TokenHandlerChain.Builder> customizer) {
-        Objects.requireNonNull(customizer, "Token handler customizer must not be null");
+        if (customizer == null) {
+            throw new QCmdException("Token handler customizer must not be null");
+        }
         TokenHandlerChain.Builder builder = TokenHandlerChain.builder().defaults();
-        TokenHandlerChain.Builder customized = Objects.requireNonNull(
-                customizer.apply(builder), "Token handler customizer must not return null");
+        TokenHandlerChain.Builder customized = customizer.apply(builder);
+        if (customized == null) {
+            throw new QCmdException("Token handler customizer must not return null");
+        }
         this.tokenHandlerChain = customized.build();
         return this;
     }
@@ -77,7 +81,10 @@ public class QCmd {
      * @return 当前 QCmd 实例
      */
     public QCmd withHelpFormatter(HelpFormatter formatter) {
-        this.helpFormatter = Objects.requireNonNull(formatter, "Help formatter must not be null");
+        if (formatter == null) {
+            throw new QCmdException("Help formatter must not be null");
+        }
+        this.helpFormatter = formatter;
         return this;
     }
 
@@ -99,8 +106,10 @@ public class QCmd {
      * @return 帮助文本
      */
     public static String help(Class<?> clazz, HelpFormatter formatter) {
-        return Objects.requireNonNull(formatter, "Help formatter must not be null")
-                .format(new CommandDescriptor(clazz));
+        if (formatter == null) {
+            throw new QCmdException("Help formatter must not be null");
+        }
+        return formatter.format(new CommandDescriptor(clazz));
     }
 
     /**
@@ -116,62 +125,28 @@ public class QCmd {
         HelpFormatter formatter = helpFormatter != null ? helpFormatter : new TerminalHelpFormatter();
         String helpText = formatter.format(descriptor);
 
-        if (!declaresAnyOption(descriptor, "-h", "--help")
-                && containsActionOption("-h", "--help")) {
-            validateCommandName(descriptor);
-            return ParsedCommand.help(helpText);
-        }
-        if (!declaresAnyOption(descriptor, "-V", "--version")
-                && containsActionOption("-V", "--version")
-                && !descriptor.getCmdAnnotation().version().isBlank()) {
-            validateCommandName(descriptor);
-            String primaryName = descriptor.getCmdAnnotation().names()[0];
-            return ParsedCommand.version(helpText,
-                    primaryName + " " + descriptor.getCmdAnnotation().version());
-        }
-
         TokenHandlerChain chain = tokenHandlerChain != null ? tokenHandlerChain : TokenHandlerChain.defaults();
         CommandLineParser.ParseResult parseResult = chain.execute(args, descriptor);
+        // 内置动作选项：--help / --version，跳过 required 校验
+        if (parseResult.actionOption() != null) {
+            if (isAnyOf(parseResult.actionOption(), "-h", "--help")) {
+                return ParsedCommand.help(helpText);
+            }
+            String version = descriptor.getCmdAnnotation().version();
+            String primaryName = descriptor.getCmdAnnotation().names()[0];
+            return ParsedCommand.version(helpText, primaryName + " " + version);
+        }
+
         CommandValidator.validate(parseResult, descriptor);
 
         T result = InstanceBinder.bind(parseResult, descriptor);
         return new ParsedCommand<>(result, helpText);
     }
 
-    private boolean containsActionOption(String... names) {
-        if (args == null || args.length < 2) {
-            return false;
-        }
-        for (int i = 1; i < args.length; i++) {
-            if ("--".equals(args[i])) {
-                return false;
-            }
-            for (String name : names) {
-                if (name.equals(args[i])) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private static boolean declaresAnyOption(CommandDescriptor descriptor, String... names) {
+    private static boolean isAnyOf(String token, String... names) {
         for (String name : names) {
-            if (descriptor.getNameToOptionMap().containsKey(name)) {
-                return true;
-            }
+            if (name.equals(token)) return true;
         }
         return false;
-    }
-
-    private void validateCommandName(CommandDescriptor descriptor) {
-        if (args == null || args.length == 0) {
-            throw new com.guanyanqi.exception.QCmdException("命令行内容为空");
-        }
-        if (!descriptor.getCommandNames().contains(args[0])) {
-            throw new com.guanyanqi.exception.QCmdException(
-                    "输入的命令 [" + args[0] + "] 与目标类声明的命令 "
-                            + descriptor.getCommandNames() + " 不匹配");
-        }
     }
 }
