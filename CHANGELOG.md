@@ -6,6 +6,17 @@ All notable changes to qcmd are documented here. The project follows semantic ve
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-08-03
+
+### 新增 / Added
+
+- 布尔开关现在可显式接收 `true` / `false`，省略值时仍默认为 `true`。 / Boolean flags now accept explicit `true` / `false` values and still default to `true` when omitted.
+- 新增 `MissingOptionValueException`，用于区分带值选项缺少参数值的错误。 / Added `MissingOptionValueException` for value-taking options with a missing value.
+
+### 变更 / Changed
+
+- 内置动作 Handler 直接产出 `ParseAction`，help/version 分流不再重复匹配选项字符串。 / Built-in action handlers now produce `ParseAction` directly, removing duplicate help/version string matching from action dispatch.
+
 ## [1.1.1] - 2026-08-03
 
 ### 修复 / Fixed
@@ -45,6 +56,7 @@ All notable changes to qcmd are documented here. The project follows semantic ve
 - Java 17 编译改用 `--release 17`。 / Java 17 compilation uses `--release 17`.
 - 文档明确列出本版本实际支持的命令行写法。 / Documentation lists the concrete command-line forms supported by this release.
 
-[Unreleased]: https://github.com/uaholic/qcmd/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/uaholic/qcmd/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/uaholic/qcmd/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/uaholic/qcmd/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/uaholic/qcmd/compare/v1.0.1...v1.1.0

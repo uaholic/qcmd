@@ -116,7 +116,8 @@ public final class TokenHandlerChain {
             }
         }
 
-        return new CommandLineParser.ParseResult(cmd, state.optionValues, state.positionalVars, state.actionOption);
+        return new CommandLineParser.ParseResult(
+                cmd, state.optionValues, state.positionalVars, state.getActionOption(), state.getAction());
     }
 
     /**

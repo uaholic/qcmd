@@ -21,9 +21,9 @@
 |---|---|
 | 🛡️ **零依赖** | 不引入任何第三方库，无依赖冲突 |
 | 💎 **Record 原生支持** | 通过 RecordComponent + Canonical Constructor 直接绑定不可变 Record |
-| ⚡ **熟悉的命令行写法** | 支持 `--key=value`、`--` 终止符和负数参数（`-a -123.45`） |
+| ⚡ **熟悉的命令行写法** | 支持 `--key=value`、`--flag false`、`--` 终止符和负数参数（`-a -123.45`） |
 | 🎨 **类型转换管线** | 基本类型 / Enum / Collection / Map / 自定义 Converter / String 构造器兜底 |
-| 🔍 **校验与帮助** | `required` 必填、`valueValidRegex` 正则、MissingParameterException / InvalidParameterValueException / UnknownOptionException |
+| 🔍 **校验与帮助** | `required` 必填、`valueValidRegex` 正则，以及针对缺值、未知选项和校验失败的类型化异常 |
 | 🔌 **主要环节可扩展** | 可自定义 Token 处理器链、HelpFormatter 和 Converter |
 
 ### 快速引入
@@ -32,7 +32,7 @@
 <dependency>
     <groupId>com.guanyanqi</groupId>
     <artifactId>qcmd</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 </dependency>
 ```
 
@@ -186,7 +186,7 @@ QCmd.of(args)
 |---|---|
 | 🛡️ **Zero Dependencies** | No Guava, no Commons — zero runtime dependencies |
 | 💎 **Native Record Support** | Direct binding via RecordComponent + Canonical Constructor |
-| ⚡ **Familiar CLI forms** | `--key=value`, the `--` terminator, and negative numeric values |
+| ⚡ **Familiar CLI forms** | `--key=value`, `--flag false`, the `--` terminator, and negative numeric values |
 | 🎨 **Type Conversion Pipeline** | Primitives, enums, collections, maps, custom converters, String-ctor fallback |
 | 🔍 **Validation & Help** | Required params, regex validation, typed exceptions, auto-generated help |
 | 🔌 **Focused Extension Points** | Custom token handlers, help formatters, and type converters |
@@ -197,7 +197,7 @@ QCmd.of(args)
 <dependency>
     <groupId>com.guanyanqi</groupId>
     <artifactId>qcmd</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 </dependency>
 ```
 

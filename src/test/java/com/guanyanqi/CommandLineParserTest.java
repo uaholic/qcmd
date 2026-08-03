@@ -6,6 +6,7 @@ import com.guanyanqi.annotation.Vars;
 import com.guanyanqi.core.CommandDescriptor;
 import com.guanyanqi.core.CommandLineParser;
 import com.guanyanqi.core.parser.impl.NegativeNumberHandler;
+import com.guanyanqi.exception.MissingOptionValueException;
 import com.guanyanqi.exception.QCmdException;
 import com.guanyanqi.exception.UnknownOptionException;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,12 @@ public class CommandLineParserTest {
         public List<String> files;
     }
 
+    @Cmd(names = "without-vars")
+    public static class WithoutVarsCmd {
+        @Parameter(names = {"-v", "--verbose"})
+        public boolean verbose;
+    }
+
     /** null args 应抛出"命令行内容为空" */
     @Test
     public void testNullArgs() {
@@ -82,9 +89,10 @@ public class CommandLineParserTest {
     @Test
     public void testMissingOptionValueAtEndOfLine() {
         CommandDescriptor desc = new CommandDescriptor(ParserSampleCmd.class);
-        QCmdException e = assertThrows(QCmdException.class, () -> {
+        MissingOptionValueException e = assertThrows(MissingOptionValueException.class, () -> {
             CommandLineParser.parse(new String[]{"parser-sample", "-p"}, desc);
         });
+        assertEquals("-p", e.getOptionName());
         assertTrue(e.getMessage().contains("缺少对应的参数值"));
     }
 
@@ -93,11 +101,12 @@ public class CommandLineParserTest {
     public void testMissingOptionValueBeforeAnotherOption() {
         CommandDescriptor desc = new CommandDescriptor(WithVarsCmd.class);
 
-        QCmdException e = assertThrows(QCmdException.class, () -> {
+        MissingOptionValueException e = assertThrows(MissingOptionValueException.class, () -> {
             CommandLineParser.parse(
                     new String[]{"with-vars", "--name", "--verbose"}, desc);
         });
 
+        assertEquals("--name", e.getOptionName());
         assertTrue(e.getMessage().contains("--name"));
         assertTrue(e.getMessage().contains("缺少对应的参数值"));
     }
@@ -179,6 +188,36 @@ public class CommandLineParserTest {
         CommandLineParser.ParseResult result = CommandLineParser.parse(
                 new String[]{"with-vars", "-n=world"}, desc);
         assertEquals("world", result.optionValues().get("-n"));
+    }
+
+    /** 有 @Vars 时，显式布尔值应被开关消费，不能混入位置变量。 */
+    @Test
+    public void testExplicitBooleanValuesWithVars() {
+        WithVarsCmd falseCmd = QCmd.of(new String[]{
+                "with-vars", "--verbose", "false", "false.txt"
+        }).parse(WithVarsCmd.class).value();
+        WithVarsCmd trueCmd = QCmd.of(new String[]{
+                "with-vars", "--verbose", "true", "true.txt"
+        }).parse(WithVarsCmd.class).value();
+
+        assertFalse(falseCmd.verbose);
+        assertEquals(List.of("false.txt"), falseCmd.files);
+        assertTrue(trueCmd.verbose);
+        assertEquals(List.of("true.txt"), trueCmd.files);
+    }
+
+    /** 没有 @Vars 时，显式 true / false 不应触发“命令不支持位置变量”。 */
+    @Test
+    public void testExplicitBooleanValuesWithoutVars() {
+        WithoutVarsCmd falseCmd = QCmd.of(new String[]{
+                "without-vars", "--verbose", "false"
+        }).parse(WithoutVarsCmd.class).value();
+        WithoutVarsCmd trueCmd = QCmd.of(new String[]{
+                "without-vars", "--verbose", "true"
+        }).parse(WithoutVarsCmd.class).value();
+
+        assertFalse(falseCmd.verbose);
+        assertTrue(trueCmd.verbose);
     }
 
     /** -- 终止符之后的 -v 和 --unknown 应全部归为位置变量，不再识别为选项 */

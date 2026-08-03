@@ -1,5 +1,7 @@
 package com.guanyanqi.core.parser;
 
+import com.guanyanqi.ParseAction;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +23,8 @@ public class ParseState {
     boolean terminatorSeen = false;
     /** 检测到的内置动作选项名（如 "--help"、"--version"），未触发为 null */
     String actionOption;
+    /** 检测到的强类型内置动作，未触发时为 EXECUTE */
+    ParseAction action = ParseAction.EXECUTE;
 
     public boolean isTerminatorSeen() {
         return terminatorSeen;
@@ -32,6 +36,10 @@ public class ParseState {
 
     public String getActionOption() {
         return actionOption;
+    }
+
+    public ParseAction getAction() {
+        return action;
     }
 
     /**
@@ -50,6 +58,7 @@ public class ParseState {
                 break;
             case ACTION:
                 actionOption = result.optionName();
+                action = result.action();
                 break;
             case SKIP:
                 break;

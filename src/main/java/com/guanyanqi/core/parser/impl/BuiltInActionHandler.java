@@ -1,8 +1,7 @@
 package com.guanyanqi.core.parser.impl;
 
+import com.guanyanqi.ParseAction;
 import com.guanyanqi.core.parser.*;
-
-import java.util.Set;
 
 /**
  * 内置动作选项处理器（{@code --help} 和 {@code --version}）。
@@ -16,34 +15,33 @@ import java.util.Set;
  */
 public class BuiltInActionHandler implements TokenHandler {
 
-    private static final Set<String> HELP_NAMES = Set.of("-h", "--help");
-    private static final Set<String> VERSION_NAMES = Set.of("-V", "--version");
-
     @Override
     public TokenResult handle(TokenContext context, ParseState state) {
         if (state.isTerminatorSeen()) {
             return null;
         }
         String token = context.currentToken();
-
-        if (HELP_NAMES.contains(token)) {
-            if (!declaresAnyOption(context, HELP_NAMES)) {
-                return TokenResult.action(token, context.allTokens().size());
-            }
+        ParseAction action = ParseAction.fromOptionName(token);
+        if (action == ParseAction.EXECUTE) {
+            return null;
         }
 
-        if (VERSION_NAMES.contains(token)) {
+        if (declaresAnyOption(context, action)) {
+            return null;
+        }
+
+        if (action == ParseAction.SHOW_VERSION) {
             boolean versionConfigured = !context.descriptor().getCmdAnnotation().version().isBlank();
-            if (!declaresAnyOption(context, VERSION_NAMES) && versionConfigured) {
-                return TokenResult.action(token, context.allTokens().size());
+            if (!versionConfigured) {
+                return null;
             }
         }
 
-        return null;
+        return TokenResult.action(token, action, context.allTokens().size());
     }
 
-    private static boolean declaresAnyOption(TokenContext context, Set<String> names) {
-        for (String name : names) {
+    private static boolean declaresAnyOption(TokenContext context, ParseAction action) {
+        for (String name : action.optionNames()) {
             if (context.descriptor().getNameToOptionMap().containsKey(name)) {
                 return true;
             }

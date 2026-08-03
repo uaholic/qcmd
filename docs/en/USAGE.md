@@ -151,6 +151,7 @@ ConverterRegistry.register(MyCustomType.class, value -> new MyCustomType(value))
 | Missing required param | `MissingParameterException` |
 | Regex mismatch | `InvalidParameterValueException` |
 | Unknown option | `UnknownOptionException` |
+| Missing option value | `MissingOptionValueException` |
 
 ---
 
@@ -280,7 +281,7 @@ qcmd borrows a few familiar Unix-style conventions and currently supports the co
 |---|---|---|
 | Standard option | `deploy -e prod` | Space-delimited |
 | Equals syntax | `deploy --env=prod` | Option and value share one token |
-| Boolean flag | `deploy -d` | No value consumed |
+| Boolean flag | `deploy -d false` | Value optional; omitted means `true`, and only explicit `true` / `false` is consumed |
 | Terminator | `deploy -- -v` | Everything after `--` is positional |
 | Negative number | `deploy -t -30` | Not confused with option `-3` |
 | Short option equals | `deploy -e=prod` | Short form also supports = |

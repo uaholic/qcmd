@@ -33,6 +33,7 @@ public interface TokenHandler {
 ```java
 TokenResult.option("-p", "8080", nextIndex);      // 命名选项
 TokenResult.boolFlag("-v", nextIndex);             // 布尔开关
+TokenResult.boolFlag("-v", "false", nextIndex);    // 带显式值的布尔开关
 TokenResult.positional("raw-value", nextIndex);    // 位置变量
 TokenResult.skip(nextIndex);                       // 跳过（"--" 自身）
 ```

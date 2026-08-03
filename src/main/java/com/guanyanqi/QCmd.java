@@ -127,11 +127,11 @@ public class QCmd {
 
         TokenHandlerChain chain = tokenHandlerChain != null ? tokenHandlerChain : TokenHandlerChain.defaults();
         CommandLineParser.ParseResult parseResult = chain.execute(args, descriptor);
-        // 内置动作选项：--help / --version，跳过 required 校验
-        if (parseResult.actionOption() != null) {
-            if (isAnyOf(parseResult.actionOption(), "-h", "--help")) {
-                return ParsedCommand.help(helpText);
-            }
+        // 内置动作跳过 required 校验，handler 已直接产出强类型 ParseAction。
+        if (parseResult.action() == ParseAction.SHOW_HELP) {
+            return ParsedCommand.help(helpText);
+        }
+        if (parseResult.action() == ParseAction.SHOW_VERSION) {
             String version = descriptor.getCmdAnnotation().version();
             String primaryName = descriptor.getCmdAnnotation().names()[0];
             return ParsedCommand.version(helpText, primaryName + " " + version);
@@ -143,10 +143,4 @@ public class QCmd {
         return new ParsedCommand<>(result, helpText);
     }
 
-    private static boolean isAnyOf(String token, String... names) {
-        for (String name : names) {
-            if (name.equals(token)) return true;
-        }
-        return false;
-    }
 }

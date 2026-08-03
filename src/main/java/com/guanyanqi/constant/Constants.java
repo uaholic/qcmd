@@ -50,4 +50,9 @@ public class Constants {
      * 布尔开关 True 标记字符串。
      */
     public static final String BOOL_TRUE_STR = "true";
+
+    /**
+     * 布尔开关 False 标记字符串。
+     */
+    public static final String BOOL_FALSE_STR = "false";
 }

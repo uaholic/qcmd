@@ -4,6 +4,7 @@ import com.guanyanqi.annotation.Cmd;
 import com.guanyanqi.annotation.Parameter;
 import com.guanyanqi.annotation.Vars;
 import com.guanyanqi.core.CommandDescriptor;
+import com.guanyanqi.core.CommandLineParser;
 import com.guanyanqi.core.HelpFormatter;
 import com.guanyanqi.core.MarkdownHelpFormatter;
 import com.guanyanqi.core.TerminalHelpFormatter;
@@ -145,6 +146,21 @@ public class HelpFormatterTest {
         assertTrue(parsed.shouldExit());
         assertNull(parsed.value());
         assertEquals("versioned 2.4.0", parsed.outputText());
+    }
+
+    /** Handler 将短 help/version 选项直接解析为强类型 ParseAction。 */
+    @Test
+    public void testBuiltInHandlerProducesParseAction() {
+        CommandDescriptor descriptor = new CommandDescriptor(VersionedCmd.class);
+        CommandLineParser.ParseResult help = CommandLineParser.parse(
+                new String[]{"versioned", "-h"}, descriptor);
+        CommandLineParser.ParseResult version = CommandLineParser.parse(
+                new String[]{"versioned", "-V"}, descriptor);
+
+        assertEquals(ParseAction.SHOW_HELP, help.action());
+        assertEquals(ParseAction.SHOW_VERSION, version.action());
+        assertEquals("-h", help.actionOption());
+        assertEquals("-V", version.actionOption());
     }
 
     /** 动作选项命中后立即结束解析，不再处理后续缺值选项。 */

@@ -1,5 +1,6 @@
 package com.guanyanqi.core;
 
+import com.guanyanqi.ParseAction;
 import com.guanyanqi.core.parser.TokenHandlerChain;
 import com.guanyanqi.exception.QCmdException;
 
@@ -35,13 +36,24 @@ public class CommandLineParser {
      * @param optionValues   选项名 -&gt; 原始字符串值的映射表
      * @param positionalVars 剩余未具名位置变量列表
      * @param actionOption   内置动作选项，未触发时为 null
+     * @param action         强类型内置动作，未触发时为 EXECUTE
      */
     public record ParseResult(
             String commandName,
             Map<String, String> optionValues,
             List<String> positionalVars,
-            String actionOption
+            String actionOption,
+            ParseAction action
     ) {
+        /** 四参构造，兼容原有 ParseResult 创建方式。 */
+        public ParseResult(String commandName,
+                           Map<String, String> optionValues,
+                           List<String> positionalVars,
+                           String actionOption) {
+            this(commandName, optionValues, positionalVars, actionOption,
+                    ParseAction.fromOptionName(actionOption));
+        }
+
         /** 三参构造，兼容无 action 的场景。 */
         public ParseResult(String commandName,
                            Map<String, String> optionValues,
@@ -53,6 +65,7 @@ public class CommandLineParser {
         public ParseResult {
             optionValues = Collections.unmodifiableMap(new LinkedHashMap<>(optionValues));
             positionalVars = List.copyOf(positionalVars);
+            action = action == null ? ParseAction.EXECUTE : action;
         }
     }
 

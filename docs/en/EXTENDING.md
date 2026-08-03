@@ -30,6 +30,7 @@ public interface TokenHandler {
 ```java
 TokenResult.option("-p", "8080", nextIndex);      // named option
 TokenResult.boolFlag("-v", nextIndex);             // boolean flag
+TokenResult.boolFlag("-v", "false", nextIndex);    // boolean flag with an explicit value
 TokenResult.positional("raw-value", nextIndex);    // positional var
 TokenResult.skip(nextIndex);                       // skip (e.g. "--" itself)
 ```

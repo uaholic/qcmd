@@ -162,6 +162,10 @@ ConverterRegistry.register(MyCustomType.class, value -> new MyCustomType(value))
 
 传入未声明的选项名时抛出 `UnknownOptionException`。
 
+### 选项缺少值
+
+带值选项位于末尾或后面紧跟另一个选项时抛出 `MissingOptionValueException`。
+
 ---
 
 ## 帮助文本
@@ -292,7 +296,7 @@ qcmd 借鉴了几种常见的 Unix 风格命令行约定，当前支持以下具
 |---|---|---|
 | 标准选项 | `deploy -e prod` | 空格分隔 |
 | 等号语法 | `deploy --env=prod` | 选项和值写在同一 token 中 |
-| 布尔开关 | `deploy -d` | 不消费值 |
+| 布尔开关 | `deploy -d false` | 值可省略；省略时为 `true`，显式值仅消费 `true` / `false` |
 | 终止符 | `deploy -- -v` | `--` 后全作位置变量 |
 | 负数参数 | `deploy -t -30` | 不被误认为选项 |
 | 短选项等号 | `deploy -e=prod` | 短选项也支持 |

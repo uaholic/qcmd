@@ -2,7 +2,7 @@ package com.guanyanqi.core.parser.impl;
 
 import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
-import com.guanyanqi.exception.QCmdException;
+import com.guanyanqi.exception.MissingOptionValueException;
 
 /**
  * 处理带值的标准选项（如 {@code -p 8080} 或 {@code --port 8080}）。
@@ -30,15 +30,19 @@ public class StandardOptionHandler implements TokenHandler {
             return TokenResult.option(token, Constants.EMPTY_STRING, context.currentIndex() + 1);
         }
         if (!context.hasNext()) {
-            throw new QCmdException("参数选项 [" + token + "] 缺少对应的参数值");
+            throw missingValue(context, token);
         }
         String next = context.peekNext();
         boolean nextIsRegisteredOption = context.descriptor().getNameToOptionMap().containsKey(next);
         boolean nextLooksLikeOption = next.startsWith(Constants.SINGLE_DASH)
                 && !NegativeNumberHandler.isNegativeNumber(next);
         if (Constants.DOUBLE_DASH.equals(next) || nextIsRegisteredOption || nextLooksLikeOption) {
-            throw new QCmdException("参数选项 [" + token + "] 缺少对应的参数值");
+            throw missingValue(context, token);
         }
         return TokenResult.option(token, next, context.currentIndex() + 2);
+    }
+
+    private static MissingOptionValueException missingValue(TokenContext context, String optionName) {
+        return new MissingOptionValueException(context.allTokens().get(0), optionName);
     }
 }
