@@ -41,14 +41,10 @@ public class MarkdownHelpFormatter implements HelpFormatter {
         md.append(" [参数 参数值] [变量...]\n```\n\n");
 
         // 参数表格
-        boolean hasOption = false;
+        md.append("**参数说明**\n\n");
+        md.append("| 选项 | 类型 | 必填 | 说明 |\n");
+        md.append("|------|------|------|------|\n");
         for (OptionDescriptor option : descriptor.getOptions()) {
-            if (!hasOption) {
-                md.append("**参数说明**\n\n");
-                md.append("| 选项 | 类型 | 必填 | 说明 |\n");
-                md.append("|------|------|------|------|\n");
-                hasOption = true;
-            }
             String names = String.join(", ", option.names());
             String required = option.required() ? "*是*" : "否";
             String desc = option.desc() != null && !option.desc().trim().isEmpty()
@@ -61,6 +57,12 @@ public class MarkdownHelpFormatter implements HelpFormatter {
               .append(required).append(" | ")
               .append(desc).append(" |\n");
         }
+        if (!declaresAnyOption(descriptor, "-h", "--help")) {
+            md.append("| `-h, --help` | flag | 否 | 显示帮助信息 |\n");
+        }
+        if (!cmdAnno.version().isBlank() && !declaresAnyOption(descriptor, "-V", "--version")) {
+            md.append("| `-V, --version` | flag | 否 | 显示版本信息 |\n");
+        }
 
         // 位置变量描述
         VarsDescriptor varsDesc = descriptor.getVarsDescriptor();
@@ -70,5 +72,14 @@ public class MarkdownHelpFormatter implements HelpFormatter {
         }
 
         return md.toString();
+    }
+
+    private static boolean declaresAnyOption(CommandDescriptor descriptor, String... names) {
+        for (String name : names) {
+            if (descriptor.getNameToOptionMap().containsKey(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

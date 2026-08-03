@@ -36,7 +36,7 @@ public final class TokenHandlerChain {
     }
 
     /**
-     * 返回预构建的默认处理器链，覆盖所有标准 POSIX/GNU 解析场景。
+     * 返回预构建的默认处理器链，覆盖 qcmd 支持的常用 POSIX/GNU 风格语法。
      * <p>顺序（每个 token 按此顺序匹配）：</p>
      * <ol>
      *   <li>{@link TerminatorHandler} — "--" 终止符</li>

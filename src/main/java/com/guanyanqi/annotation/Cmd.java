@@ -39,4 +39,11 @@ public @interface Cmd {
      * @return 命令的描述文本
      */
     String desc() default "";
+
+    /**
+     * 命令版本号。设置后，qcmd 会内置处理 {@code --version} 和 {@code -V}。
+     *
+     * @return 命令版本号；空字符串表示不启用版本选项
+     */
+    String version() default "";
 }

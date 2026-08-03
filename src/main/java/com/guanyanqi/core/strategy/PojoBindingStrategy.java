@@ -6,6 +6,7 @@ import com.guanyanqi.core.CommandDescriptor;
 import com.guanyanqi.core.CommandLineParser;
 import com.guanyanqi.core.model.OptionDescriptor;
 import com.guanyanqi.core.model.VarsDescriptor;
+import com.guanyanqi.exception.QCmdException;
 import com.guanyanqi.utils.QCmdUtils;
 
 import java.lang.reflect.Constructor;
@@ -32,6 +33,10 @@ public class PojoBindingStrategy implements CommandBindingStrategy {
         List<Field> fields = QCmdUtils.getAllFieldsList(targetClass);
         for (Field field : fields) {
             Parameter param = field.getAnnotation(Parameter.class);
+            Vars varsAnnotation = field.getAnnotation(Vars.class);
+            if (param != null && varsAnnotation != null) {
+                throw new QCmdException("属性 [" + field.getName() + "] 不能同时声明 @Parameter 和 @Vars");
+            }
             if (param != null) {
                 OptionDescriptor option = new OptionDescriptor(
                         param.names(),
@@ -47,11 +52,10 @@ public class PojoBindingStrategy implements CommandBindingStrategy {
                 );
                 descriptor.registerOption(option);
             } else {
-                Vars vAnno = field.getAnnotation(Vars.class);
-                if (vAnno != null) {
+                if (varsAnnotation != null) {
                     VarsDescriptor vars = new VarsDescriptor(
-                            vAnno.desc(),
-                            vAnno.elementConverter(),
+                            varsAnnotation.desc(),
+                            varsAnnotation.elementConverter(),
                             field.getType(),
                             field.getGenericType(),
                             field.getName(),

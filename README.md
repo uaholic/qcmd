@@ -2,7 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)]()
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![CI](https://github.com/uaholic/qcmd/actions/workflows/ci.yml/badge.svg)](https://github.com/uaholic/qcmd/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.guanyanqi/qcmd.svg)](https://central.sonatype.com/artifact/com.guanyanqi/qcmd)
 
 > 🌐 [中文](#中文) | [English](#english)
 
@@ -20,7 +21,7 @@
 |---|---|
 | 🛡️ **零依赖** | 不引入任何第三方库，无依赖冲突 |
 | 💎 **Record 原生支持** | 通过 RecordComponent + Canonical Constructor 直接绑定不可变 Record |
-| ⚡ **POSIX/GNU 兼容** | `--key=value`、`--` 终止符、负数识别（`-a -123.45`） |
+| ⚡ **常用 POSIX/GNU 风格语法** | `--key=value`、`--` 终止符、负数识别（`-a -123.45`） |
 | 🎨 **类型转换管线** | 基本类型 / Enum / Collection / Map / 自定义 Converter / String 构造器兜底 |
 | 🔍 **校验与帮助** | `required` 必填、`valueValidRegex` 正则、MissingParameterException / InvalidParameterValueException / UnknownOptionException |
 | 🔌 **全链路可扩展** | Token 处理器链、HelpFormatter 帮助格式、Converter 类型转换均支持自定义 |
@@ -31,14 +32,14 @@
 <dependency>
     <groupId>com.guanyanqi</groupId>
     <artifactId>qcmd</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 ### 30 秒快速上手
 
 ```java
-@Cmd(names = {"deploy"}, desc = "应用部署指令")
+@Cmd(names = {"deploy"}, desc = "应用部署指令", version = "1.0.0")
 public record DeployCmd(
     @Parameter(names = {"-e", "--env"}, required = true,
                valueValidRegex = "^(dev|test|prod)$", desc = "目标环境")
@@ -63,6 +64,24 @@ System.out.println(cmd.timeout());   // 30
 System.out.println(cmd.dryRun());    // true
 System.out.println(cmd.files());     // [app.jar, config.yaml]
 ```
+
+### 帮助与版本请求
+
+qcmd 内置处理 `-h` / `--help`；当 `@Cmd.version` 非空时也会处理 `-V` / `--version`。这两种请求会跳过必填校验和实例绑定：
+
+```java
+ParsedCommand<DeployCmd> parsed = QCmd.of(args).parse(DeployCmd.class);
+if (parsed.shouldExit()) {
+    System.out.println(parsed.outputText());
+    return;
+}
+DeployCmd cmd = parsed.value();
+
+// 也可以不解析参数，直接生成帮助
+System.out.println(QCmd.help(DeployCmd.class));
+```
+
+> 如果命令类自己声明了 `-h` / `--help` 或 `-V` / `--version`，qcmd 会保留用户定义的语义。
 
 ### 自定义类型转换器
 
@@ -128,8 +147,8 @@ QCmd.of(args)
 
 | 模块 | 职责 |
 |---|---|
-| `QCmd` | 无状态门面入口 |
-| `ParsedCommand<T>` | 不可变结果容器（value + helpText） |
+| `QCmd` | 一次性、可配置的解析会话入口 |
+| `ParsedCommand<T>` | 不可变结果容器（value + help/action/output） |
 | `CommandDescriptor` | 元数据提取 + 6 步类型转换管线 |
 | `TokenHandlerChain` | 可插拔的 Chain of Responsibility 分词器 |
 | `CommandValidator` | 未知选项 / 必填 / 正则校验 |
@@ -149,6 +168,7 @@ QCmd.of(args)
 - [使用指南](docs/zh/USAGE.md) · [English](docs/en/USAGE.md)
 - [架构设计](docs/zh/ARCHITECTURE.md) · [English](docs/en/ARCHITECTURE.md)
 - [扩展指南](docs/zh/EXTENDING.md) · [English](docs/en/EXTENDING.md)
+- [变更日志](CHANGELOG.md)
 
 ### License
 
@@ -166,7 +186,7 @@ QCmd.of(args)
 |---|---|
 | 🛡️ **Zero Dependencies** | No Guava, no Commons — zero runtime dependencies |
 | 💎 **Native Record Support** | Direct binding via RecordComponent + Canonical Constructor |
-| ⚡ **POSIX/GNU Compatible** | `--key=value` syntax, `--` terminator, negative number detection |
+| ⚡ **Common POSIX/GNU-style syntax** | `--key=value` syntax, `--` terminator, negative number detection |
 | 🎨 **Type Conversion Pipeline** | Primitives, enums, collections, maps, custom converters, String-ctor fallback |
 | 🔍 **Validation & Help** | Required params, regex validation, typed exceptions, auto-generated help |
 | 🔌 **Fully Extensible** | Custom token handlers, help formatters, and type converters |
@@ -177,12 +197,12 @@ QCmd.of(args)
 <dependency>
     <groupId>com.guanyanqi</groupId>
     <artifactId>qcmd</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 ```java
-@Cmd(names = {"deploy"}, desc = "Application deployment command")
+@Cmd(names = {"deploy"}, desc = "Application deployment command", version = "1.0.0")
 public record DeployCmd(
     @Parameter(names = {"-e", "--env"}, required = true,
                valueValidRegex = "^(dev|test|prod)$", desc = "Target environment")
@@ -202,6 +222,24 @@ public record DeployCmd(
 ParsedCommand<DeployCmd> parsed = QCmd.of(args).parse(DeployCmd.class);
 DeployCmd cmd = parsed.value();
 ```
+
+### Help and version requests
+
+qcmd handles `-h` / `--help` automatically. When `@Cmd.version` is set, it also handles `-V` / `--version`. Both actions bypass required-option validation and instance binding:
+
+```java
+ParsedCommand<DeployCmd> parsed = QCmd.of(args).parse(DeployCmd.class);
+if (parsed.shouldExit()) {
+    System.out.println(parsed.outputText());
+    return;
+}
+DeployCmd cmd = parsed.value();
+
+// Generate help without parsing arguments
+System.out.println(QCmd.help(DeployCmd.class));
+```
+
+User-declared `-h` / `--help` or `-V` / `--version` options take precedence over the built-ins.
 
 ### Custom Converter
 
@@ -247,8 +285,8 @@ QCmd.of(args)
 
 | Module | Responsibility |
 |---|---|
-| `QCmd` | Stateless facade entry point |
-| `ParsedCommand<T>` | Immutable result container |
+| `QCmd` | One-shot configurable parsing session |
+| `ParsedCommand<T>` | Immutable value/help/action result |
 | `CommandDescriptor` | Metadata extraction + 6-stage type conversion |
 | `TokenHandlerChain` | Pluggable Chain of Responsibility tokenizer |
 | `CommandValidator` | Unknown option / required / regex validation |
@@ -268,6 +306,7 @@ QCmd.of(args)
 - [Usage Guide](docs/en/USAGE.md) · [中文](docs/zh/USAGE.md)
 - [Architecture](docs/en/ARCHITECTURE.md) · [中文](docs/zh/ARCHITECTURE.md)
 - [Extending](docs/en/EXTENDING.md) · [中文](docs/zh/EXTENDING.md)
+- [Changelog](CHANGELOG.md)
 
 ### License
 

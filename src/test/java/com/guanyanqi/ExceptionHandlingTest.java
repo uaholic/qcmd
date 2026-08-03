@@ -10,12 +10,12 @@ import com.guanyanqi.exception.MissingParameterException;
 import com.guanyanqi.exception.QCmdException;
 import com.guanyanqi.exception.UnknownOptionException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 专门针对各种异常边界场景的单元测试集合。

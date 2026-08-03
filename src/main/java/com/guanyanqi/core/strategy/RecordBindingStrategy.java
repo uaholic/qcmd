@@ -6,6 +6,7 @@ import com.guanyanqi.core.CommandDescriptor;
 import com.guanyanqi.core.CommandLineParser;
 import com.guanyanqi.core.model.OptionDescriptor;
 import com.guanyanqi.core.model.VarsDescriptor;
+import com.guanyanqi.exception.QCmdException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -42,6 +43,11 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
         for (RecordComponent comp : components) {
             // 级联提取 @Parameter 注解，未找到则尝试 @Vars（互斥）
             Parameter param = getParameterAnnotation(comp, targetClass);
+            Vars varsAnnotation = getVarsAnnotation(comp, targetClass);
+            if (param != null && varsAnnotation != null) {
+                throw new QCmdException("Record 组件 [" + comp.getName()
+                        + "] 不能同时声明 @Parameter 和 @Vars");
+            }
             if (param != null) {
                 OptionDescriptor option = new OptionDescriptor(
                         param.names(),
@@ -57,11 +63,10 @@ public class RecordBindingStrategy implements CommandBindingStrategy {
                 );
                 descriptor.registerOption(option);
             } else {
-                Vars vAnno = getVarsAnnotation(comp, targetClass);
-                if (vAnno != null) {
+                if (varsAnnotation != null) {
                     VarsDescriptor vars = new VarsDescriptor(
-                            vAnno.desc(),
-                            vAnno.elementConverter(),
+                            varsAnnotation.desc(),
+                            varsAnnotation.elementConverter(),
                             comp.getType(),
                             comp.getGenericType(),
                             comp.getName(),

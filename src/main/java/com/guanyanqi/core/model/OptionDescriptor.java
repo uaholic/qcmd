@@ -54,7 +54,7 @@ public class OptionDescriptor {
                             Type genericType,
                             String targetName,
                             AnnotatedElement rawElement) {
-        this.names = Objects.requireNonNull(names, "Option names must not be null");
+        this.names = Objects.requireNonNull(names, "Option names must not be null").clone();
         this.desc = desc != null ? desc : Constants.EMPTY_STRING;
         this.required = required;
         this.valueValidRegex = valueValidRegex != null ? valueValidRegex : Constants.EMPTY_STRING;
@@ -71,7 +71,7 @@ public class OptionDescriptor {
      *
      * @return 参数选项名称数组
      */
-    public String[] names() { return names; }
+    public String[] names() { return names.clone(); }
 
     /**
      * 获取参数描述说明。

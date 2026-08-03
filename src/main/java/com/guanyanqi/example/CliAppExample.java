@@ -58,7 +58,7 @@ public class CliAppExample {
      * @param dryRun    是否演练模式
      * @param artifacts 产物路径列表
      */
-    @Cmd(names = {"deploy"}, desc = "部署云端应用服务的核心指令")
+    @Cmd(names = {"deploy"}, desc = "部署云端应用服务的核心指令", version = "1.0.0")
     public record DeployCommand(
             @Parameter(names = {"-s", "--server"}, required = true, converter = ServerConfigConverter.class, desc = "目标服务器信息 (host:port)")
             ServerConfig server,
@@ -95,8 +95,13 @@ public class CliAppExample {
         System.out.println("🌟 欢迎使用 qcmd 命令行解析工具");
         System.out.println("==================================================");
 
-        QCmd qcmd = QCmd.of(mockCliArgs);
+        String[] effectiveArgs = args.length == 0 ? mockCliArgs : args;
+        QCmd qcmd = QCmd.of(effectiveArgs);
         ParsedCommand<DeployCommand> parsed = qcmd.parse(DeployCommand.class);
+        if (parsed.shouldExit()) {
+            System.out.println(parsed.outputText());
+            return;
+        }
         DeployCommand command = parsed.value();
 
         System.out.println("✅ 解析成功！装配结果如下：");

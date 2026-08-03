@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,6 +38,19 @@ public class CommandDescriptorTest {
         @Override
         public String convert(String value) {
             return "var:" + value;
+        }
+    }
+
+    public static class CountingConverter implements QStringConverter<String> {
+        static final AtomicInteger CONSTRUCTIONS = new AtomicInteger();
+
+        public CountingConverter() {
+            CONSTRUCTIONS.incrementAndGet();
+        }
+
+        @Override
+        public String convert(String value) {
+            return value;
         }
     }
 
@@ -85,6 +99,28 @@ public class CommandDescriptorTest {
     public static class BadCtorCmd {
         @Parameter(names = "-b")
         public BadStringCtorType badType;
+    }
+
+    @Cmd(names = "nested")
+    public static class NestedGenericCmd {
+        @Parameter(names = "--lists")
+        public List<List<Integer>> lists;
+
+        @Parameter(names = "--map")
+        public Map<String, List<Long>> map;
+    }
+
+    @Cmd(names = "counting")
+    public static class CountingConverterCmd {
+        @Parameter(names = "--value", converter = CountingConverter.class)
+        public String value;
+    }
+
+    @Cmd(names = "both")
+    public static class ConflictingAnnotationsCmd {
+        @Parameter(names = "--value")
+        @Vars
+        public String value;
     }
 
     /**
@@ -157,5 +193,53 @@ public class CommandDescriptorTest {
             QCmd.of(new String[]{"bad-ctor", "-b", "val"}).parse(BadCtorCmd.class);
         });
         assertTrue(e.getMessage().contains("解析绑定"));
+    }
+
+    /** 嵌套集合和 Map value 的泛型应递归转换，不再将 ParameterizedType 强转为 Class。 */
+    @Test
+    public void testNestedGenericConversion() {
+        NestedGenericCmd cmd = QCmd.of(new String[]{
+                "nested", "--lists", "1,2", "--map", "first=3"
+        }).parse(NestedGenericCmd.class).value();
+
+        assertEquals(List.of(List.of(1), List.of(2)), cmd.lists);
+        assertEquals(List.of(3L), cmd.map.get("first"));
+    }
+
+    /** 用户转换器默认按解析请求实例化，不强制其具备全局线程安全性。 */
+    @Test
+    public void testCustomConverterIsNotGloballyCached() {
+        CountingConverter.CONSTRUCTIONS.set(0);
+
+        QCmd.of(new String[]{"counting", "--value", "one"})
+                .parse(CountingConverterCmd.class);
+        QCmd.of(new String[]{"counting", "--value", "two"})
+                .parse(CountingConverterCmd.class);
+
+        assertEquals(2, CountingConverter.CONSTRUCTIONS.get());
+    }
+
+    /** 描述元数据只读，且选项名数组使用防御性副本。 */
+    @Test
+    public void testDescriptorMetadataIsImmutable() {
+        CommandDescriptor descriptor = new CommandDescriptor(TreeMapCmd.class);
+        assertThrows(UnsupportedOperationException.class,
+                () -> descriptor.getOptions().clear());
+        assertThrows(UnsupportedOperationException.class,
+                () -> descriptor.getNameToOptionMap().clear());
+
+        String[] names = descriptor.getOptions().get(0).names();
+        names[0] = "--changed";
+        assertEquals("-m", descriptor.getOptions().get(0).names()[0]);
+        assertThrows(QCmdException.class,
+                () -> descriptor.registerOption(descriptor.getOptions().get(0)));
+    }
+
+    /** 同一元素上的 @Parameter 与 @Vars 语义冲突，应在建模时立即报错。 */
+    @Test
+    public void testParameterAndVarsAreMutuallyExclusive() {
+        QCmdException e = assertThrows(QCmdException.class,
+                () -> new CommandDescriptor(ConflictingAnnotationsCmd.class));
+        assertTrue(e.getMessage().contains("不能同时声明"));
     }
 }

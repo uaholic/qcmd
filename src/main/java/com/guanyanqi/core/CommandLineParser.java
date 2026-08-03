@@ -39,7 +39,15 @@ public class CommandLineParser {
             String commandName,
             Map<String, String> optionValues,
             List<String> positionalVars
-    ) {}
+    ) {
+        /**
+         * 为解析结果建立防御性副本，避免外部修改解析器内部状态。
+         */
+        public ParseResult {
+            optionValues = Collections.unmodifiableMap(new LinkedHashMap<>(optionValues));
+            positionalVars = List.copyOf(positionalVars);
+        }
+    }
 
     /**
      * 将原始命令行数组解析拆解为 ParseResult。

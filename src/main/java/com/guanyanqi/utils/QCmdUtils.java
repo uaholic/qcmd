@@ -5,6 +5,8 @@ import com.guanyanqi.exception.QCmdException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * 基础反射与集合构造通用工具类。
@@ -58,6 +60,33 @@ public class QCmdUtils {
             } catch (NoSuchMethodException e) {
                 throw new QCmdException("集合类型 [" + type.getName() + "] 没有默认无参构造方法无法创建实例");
             }
+        }
+    }
+
+    /**
+     * 根据 Map 接口或实现类型创建可写映射实例。
+     *
+     * @param type Map 接口或实现类
+     * @return 可写 Map 实例
+     * @throws Exception 实例化失败时抛出
+     */
+    @SuppressWarnings("rawtypes")
+    public static Map createMapByType(Class<?> type) throws Exception {
+        if (type == Map.class) {
+            return new LinkedHashMap<>();
+        }
+        if (type == SortedMap.class || type == NavigableMap.class) {
+            return new TreeMap<>();
+        }
+        if (type == ConcurrentMap.class) {
+            return new ConcurrentHashMap<>();
+        }
+        try {
+            Constructor<?> ctor = type.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            return (Map) ctor.newInstance();
+        } catch (NoSuchMethodException e) {
+            throw new QCmdException("映射类型 [" + type.getName() + "] 没有默认无参构造方法无法创建实例");
         }
     }
 }

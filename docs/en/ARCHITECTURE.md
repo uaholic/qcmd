@@ -13,14 +13,15 @@ QCmd.of(args)
   │
   ├─ 1. CommandDescriptor(Class)          ← reflection-based metadata extraction
   ├─ 2. formatter.format(descriptor)      ← help text (swappable strategy)
-  ├─ 3. TokenHandlerChain.execute(...)    ← token parsing (extensible chain)
-  ├─ 4. CommandValidator.validate(...)    ← rule validation
-  └─ 5. InstanceBinder.bind(...)          ← reflection-based instance construction
+   ├─ 3. help/version action shortcut      ← display and exit normally
+   ├─ 4. TokenHandlerChain.execute(...)    ← token parsing (extensible chain)
+   ├─ 5. CommandValidator.validate(...)    ← rule validation
+   └─ 6. InstanceBinder.bind(...)          ← reflection-based instance construction
        │
-       └─ ParsedCommand<T>(value, helpText)
+        └─ ParsedCommand<T>(value, helpText, action, outputText)
 ```
 
-Shared state between steps is limited to `CommandDescriptor` (immutable metadata) and `ParseResult` (immutable parse result). Zero side effects, zero global state.
+`CommandDescriptor` and `ParseResult` cross pipeline stages as read-only snapshots. `ConverterRegistry` is an explicit process-global extension point; other parsing state remains scoped to the current `QCmd` session.
 
 ---
 
@@ -43,18 +44,19 @@ CommandDescriptor
   └── convertValue / convertVars           ← 6-stage type conversion pipeline
 ```
 
-Strategy pattern extracts metadata from POJO `Field`s or Record `RecordComponent`s. `@Parameter` and `@Vars` are mutually exclusive per element, handled via if-else:
+Strategy implementations extract metadata from POJO `Field`s or Record `RecordComponent`s. `@Parameter` and `@Vars` are mutually exclusive; declaring both fails immediately. After extraction the descriptor is frozen, and collection accessors expose read-only views or copies.
 
 ```java
 for (Field field : fields) {
     Parameter param = field.getAnnotation(Parameter.class);
+    Vars vars = field.getAnnotation(Vars.class);
+    if (param != null && vars != null) {
+        throw new QCmdException("@Parameter and @Vars are mutually exclusive");
+    }
     if (param != null) {
-        descriptor.registerOption(...);   // @Parameter branch
-    } else {
-        Vars vAnno = field.getAnnotation(Vars.class);
-        if (vAnno != null) {
-            descriptor.registerVars(...); // @Vars branch
-        }
+        descriptor.registerOption(...);
+    } else if (vars != null) {
+        descriptor.registerVars(...);
     }
 }
 ```
@@ -70,7 +72,7 @@ for (Field field : fields) {
 5. Map (parse k=v → recursive key/value conversion)
 6. Single-String-constructor fallback
 
-Converter instances cached via `ConcurrentHashMap`.
+Annotation-declared converters are instantiated per parse request, so user converters are not forced to be globally thread-safe. Instances explicitly registered in the process-global `ConverterRegistry` remain the caller's lifecycle responsibility.
 
 ---
 
@@ -101,7 +103,7 @@ interface TokenHandler {
 | 2 | `EqualsSignOptionHandler` | `-x` contains `=` | Split into key=value option |
 | 3 | `BooleanFlagHandler` | Known bool option | Store `"true"` |
 | 4 | `NegativeNumberHandler` | `-\d` not a known option | Treat as positional |
-| 5 | `StandardOptionHandler` | Other `-` prefix | Consume next token as value |
+| 5 | `StandardOptionHandler` | Other `-` prefix | Safely consume known-option values; retain unknown options for validation |
 | 6 | `PositionalHandler` | Non-`-` prefix or after `--` | Treat as positional |
 
 ### Extensibility
@@ -118,7 +120,7 @@ interface TokenHandler {
 | `replace(Class, h)` | Replace first matching type |
 | `remove(Class)` | Remove first matching type |
 
-The chain is immutable — each Builder operation returns a new `TokenHandlerChain`.
+The Builder is mutable while configuring the chain. `build()` defensively copies the handler list and returns an immutable `TokenHandlerChain`.
 
 User entry point: `QCmd.withTokenHandlers(chain -> chain.prepend(new MyHandler()))`
 
@@ -208,11 +210,12 @@ QCmd.of(args).withHelpFormatter(d -> "USAGE: " + d.getCommandNames()).parse(MyCm
 
 ### QCmd
 
-Stateless facade:
+One-shot configurable parsing session:
 
 ```java
 QCmd.of(String[] args)
 ParsedCommand<T> parse(Class<T> clazz)
+String QCmd.help(Class<?> clazz)
 QCmd withTokenHandlers(UnaryOperator<Builder>)
 QCmd withHelpFormatter(HelpFormatter)
 ```
@@ -220,7 +223,8 @@ QCmd withHelpFormatter(HelpFormatter)
 ### ParsedCommand
 
 ```java
-record ParsedCommand<T>(T value, String helpText) {}
+record ParsedCommand<T>(T value, String helpText,
+                        ParseAction action, String outputText) {}
 ```
 
 ---
@@ -234,6 +238,6 @@ record ParsedCommand<T>(T value, String helpText) {}
 | Strategy pattern | `CommandBindingStrategy` + Factory |
 | Chain of Responsibility | `TokenHandler` chain |
 | Adapter pattern | `HelpFormatter` with multiple output formats |
-| Immutability | All data objects are records |
+| Immutability | Result records contain read-only snapshots; metadata freezes after construction |
 | Open extension | `ConverterRegistry`, `TokenHandlerChain.Builder`, `withTokenHandlers()`, `withHelpFormatter()` |
 | Static factory | `QCmd.of()` single entry |

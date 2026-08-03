@@ -3,13 +3,14 @@ package com.guanyanqi;
 import com.guanyanqi.core.*;
 import com.guanyanqi.core.parser.TokenHandlerChain;
 
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 /**
  * QCmd 命令行处理工具的核心门面类（Facade）。
  * 委托给 core 层的 CommandDescriptor, CommandLineParser, CommandValidator, InstanceBinder, HelpFormatter 处理。
  *
- * <p>推荐用法（无状态）：</p>
+ * <p>推荐用法（一次性解析会话）：</p>
  * <pre>
  *     ParsedCommand&lt;DeployCmd&gt; result = QCmd.of(args).parse(DeployCmd.class);
  *     DeployCmd cmd = result.value();
@@ -36,7 +37,7 @@ public class QCmd {
     private HelpFormatter helpFormatter;
 
     private QCmd(String[] args) {
-        this.args = args;
+        this.args = args == null ? null : args.clone();
     }
 
     /**
@@ -56,8 +57,11 @@ public class QCmd {
      * @return 当前 QCmd 实例
      */
     public QCmd withTokenHandlers(UnaryOperator<TokenHandlerChain.Builder> customizer) {
+        Objects.requireNonNull(customizer, "Token handler customizer must not be null");
         TokenHandlerChain.Builder builder = TokenHandlerChain.builder().defaults();
-        this.tokenHandlerChain = customizer.apply(builder).build();
+        TokenHandlerChain.Builder customized = Objects.requireNonNull(
+                customizer.apply(builder), "Token handler customizer must not return null");
+        this.tokenHandlerChain = customized.build();
         return this;
     }
 
@@ -73,8 +77,30 @@ public class QCmd {
      * @return 当前 QCmd 实例
      */
     public QCmd withHelpFormatter(HelpFormatter formatter) {
-        this.helpFormatter = formatter;
+        this.helpFormatter = Objects.requireNonNull(formatter, "Help formatter must not be null");
         return this;
+    }
+
+    /**
+     * 不解析任何参数，直接为指定命令类生成默认终端帮助文本。
+     *
+     * @param clazz 目标命令类
+     * @return 帮助文本
+     */
+    public static String help(Class<?> clazz) {
+        return help(clazz, new TerminalHelpFormatter());
+    }
+
+    /**
+     * 使用指定格式化器为命令类生成帮助文本。
+     *
+     * @param clazz 目标命令类
+     * @param formatter 帮助文本格式化器
+     * @return 帮助文本
+     */
+    public static String help(Class<?> clazz, HelpFormatter formatter) {
+        return Objects.requireNonNull(formatter, "Help formatter must not be null")
+                .format(new CommandDescriptor(clazz));
     }
 
     /**
@@ -90,11 +116,62 @@ public class QCmd {
         HelpFormatter formatter = helpFormatter != null ? helpFormatter : new TerminalHelpFormatter();
         String helpText = formatter.format(descriptor);
 
+        if (!declaresAnyOption(descriptor, "-h", "--help")
+                && containsActionOption("-h", "--help")) {
+            validateCommandName(descriptor);
+            return ParsedCommand.help(helpText);
+        }
+        if (!declaresAnyOption(descriptor, "-V", "--version")
+                && containsActionOption("-V", "--version")
+                && !descriptor.getCmdAnnotation().version().isBlank()) {
+            validateCommandName(descriptor);
+            String primaryName = descriptor.getCmdAnnotation().names()[0];
+            return ParsedCommand.version(helpText,
+                    primaryName + " " + descriptor.getCmdAnnotation().version());
+        }
+
         TokenHandlerChain chain = tokenHandlerChain != null ? tokenHandlerChain : TokenHandlerChain.defaults();
         CommandLineParser.ParseResult parseResult = chain.execute(args, descriptor);
         CommandValidator.validate(parseResult, descriptor);
 
         T result = InstanceBinder.bind(parseResult, descriptor);
         return new ParsedCommand<>(result, helpText);
+    }
+
+    private boolean containsActionOption(String... names) {
+        if (args == null || args.length < 2) {
+            return false;
+        }
+        for (int i = 1; i < args.length; i++) {
+            if ("--".equals(args[i])) {
+                return false;
+            }
+            for (String name : names) {
+                if (name.equals(args[i])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean declaresAnyOption(CommandDescriptor descriptor, String... names) {
+        for (String name : names) {
+            if (descriptor.getNameToOptionMap().containsKey(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void validateCommandName(CommandDescriptor descriptor) {
+        if (args == null || args.length == 0) {
+            throw new com.guanyanqi.exception.QCmdException("命令行内容为空");
+        }
+        if (!descriptor.getCommandNames().contains(args[0])) {
+            throw new com.guanyanqi.exception.QCmdException(
+                    "输入的命令 [" + args[0] + "] 与目标类声明的命令 "
+                            + descriptor.getCommandNames() + " 不匹配");
+        }
     }
 }

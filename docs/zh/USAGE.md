@@ -19,7 +19,7 @@
 使用 Java Record 定义命令行参数结构：
 
 ```java
-@Cmd(names = {"deploy", "dep"}, desc = "应用部署指令")
+@Cmd(names = {"deploy", "dep"}, desc = "应用部署指令", version = "1.0.0")
 public record DeployCmd(
     @Parameter(names = {"-e", "--env"}, required = true,
                valueValidRegex = "^(dev|test|prod)$",
@@ -52,7 +52,7 @@ System.out.println(cmd.dryRun());   // true
 System.out.println(cmd.artifacts());// [app.jar, config.yaml]
 ```
 
-`parse()` 返回 `ParsedCommand<T>` 记录，包含 `value()`（命令实例）和 `helpText()`（帮助文档）。
+`parse()` 返回 `ParsedCommand<T>` 记录。普通解析时 `action()` 为 `EXECUTE`，`value()` 为命令实例；帮助或版本请求时 `shouldExit()` 为 `true`，可直接输出 `outputText()`。
 
 ---
 
@@ -64,6 +64,7 @@ System.out.println(cmd.artifacts());// [app.jar, config.yaml]
 |---|---|---|
 | `names` | `String[]` | **必填**，命令名称数组，如 `{"deploy", "dep"}` |
 | `desc` | `String` | 命令功能描述，用于帮助文本 |
+| `version` | `String` | 可选版本号；非空时启用 `-V` / `--version` |
 
 ### @Parameter — 选项声明
 
@@ -76,7 +77,7 @@ System.out.println(cmd.artifacts());// [app.jar, config.yaml]
 | `valueValidRegex` | `String` | 参数值正则校验 |
 | `valueValidDesc` | `String` | 校验失败时的提示信息 |
 
-每个 Field/RecordComponent 上 `@Parameter` 和 `@Vars` 互斥——只会匹配其一。
+每个 Field/RecordComponent 上 `@Parameter` 和 `@Vars` 互斥；同时声明会在建模时抛出 `QCmdException`。
 
 ### @Vars — 位置变量声明
 
@@ -137,6 +138,8 @@ public class ServerAddressConverter implements QStringConverter<ServerAddress> {
 ServerAddress server;
 ```
 
+注解上的自定义转换器每次解析都会创建新实例，不要依赖跨解析请求的实例状态。`ConverterRegistry` 则是进程级全局注册表，建议在应用启动阶段完成注册。
+
 ### 全局注册
 
 ```java
@@ -163,6 +166,28 @@ ConverterRegistry.register(MyCustomType.class, value -> new MyCustomType(value))
 
 ## 帮助文本
 
+### 内置 help / version 动作
+
+```java
+ParsedCommand<DeployCmd> parsed = QCmd.of(args).parse(DeployCmd.class);
+if (parsed.shouldExit()) {
+    System.out.println(parsed.outputText());
+    return;
+}
+DeployCmd command = parsed.value();
+```
+
+`-h` / `--help` 会跳过必填校验和实例绑定。当 `@Cmd.version` 非空时，`-V` / `--version` 也按同样方式处理。`--` 终止符之后的 `--help` 仍是普通位置参数。
+
+如果命令类自己声明了这些选项，用户定义优先。也可以不解析命令行，直接调用：
+
+```java
+String help = QCmd.help(DeployCmd.class);
+String markdown = QCmd.help(DeployCmd.class, new MarkdownHelpFormatter());
+```
+
+### 帮助格式
+
 `ParsedCommand.helpText()` 使用当前 HelpFormatter 生成帮助。默认使用 `TerminalHelpFormatter`（纯文本格式）。
 
 ```java
@@ -180,6 +205,9 @@ System.out.println(parsed.helpText());
 	参数：-e|--env（必填），参数说明：目标环境，输入规则：只能是 dev, test 或 prod
 	参数：-t|--timeout（可选），参数说明：超时时间(秒)
 	参数：-d|--dry-run（可选），参数说明：模拟试运行
+内置选项：
+	-h|--help：显示帮助信息
+	-V|--version：显示版本信息
 变量描述：部署产物路径列表
 ```
 
@@ -209,6 +237,8 @@ Markdown 格式输出：
 | `-e, --env` | String | *是* | 目标环境（只能是 dev, test 或 prod） |
 | `-t, --timeout` | int | 否 | 超时时间(秒) |
 | `-d, --dry-run` | boolean | 否 | 模拟试运行 |
+| `-h, --help` | flag | 否 | 显示帮助信息 |
+| `-V, --version` | flag | 否 | 显示版本信息 |
 ```
 
 ---
@@ -253,7 +283,7 @@ TokenHandlerChain.Builder builder = TokenHandlerChain.builder()
     .append(new MyCustomHandler());                  // 追加到末尾
 ```
 
-### POSIX/GNU 兼容性
+### 支持的 POSIX/GNU 风格语法
 
 | 特性 | 示例 | 说明 |
 |---|---|---|
@@ -263,6 +293,8 @@ TokenHandlerChain.Builder builder = TokenHandlerChain.builder()
 | 终止符 | `deploy -- -v` | `--` 后全作位置变量 |
 | 负数参数 | `deploy -t -30` | 不被误认为选项 |
 | 短选项等号 | `deploy -e=prod` | 短选项也支持 |
+
+qcmd 目前不声称完整 POSIX/GNU 兼容，也不处理 `-abc` 短选项组合。带值选项后如果紧跟另一个 `-` 开头的 token，会报告前一个选项缺值；负十进制数例外。如需传递普通的 `-` 开头字符串，请使用 `--name=-literal`。
 
 ---
 

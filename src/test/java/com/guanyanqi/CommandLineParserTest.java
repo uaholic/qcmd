@@ -5,7 +5,9 @@ import com.guanyanqi.annotation.Parameter;
 import com.guanyanqi.annotation.Vars;
 import com.guanyanqi.core.CommandDescriptor;
 import com.guanyanqi.core.CommandLineParser;
+import com.guanyanqi.core.parser.impl.NegativeNumberHandler;
 import com.guanyanqi.exception.QCmdException;
+import com.guanyanqi.exception.UnknownOptionException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -84,6 +86,71 @@ public class CommandLineParserTest {
             CommandLineParser.parse(new String[]{"parser-sample", "-p"}, desc);
         });
         assertTrue(e.getMessage().contains("缺少对应的参数值"));
+    }
+
+    /** 带值选项后紧跟另一个已声明选项时，应报告前一个选项缺值，不能吞掉后一个选项 */
+    @Test
+    public void testMissingOptionValueBeforeAnotherOption() {
+        CommandDescriptor desc = new CommandDescriptor(WithVarsCmd.class);
+
+        QCmdException e = assertThrows(QCmdException.class, () -> {
+            CommandLineParser.parse(
+                    new String[]{"with-vars", "--name", "--verbose"}, desc);
+        });
+
+        assertTrue(e.getMessage().contains("--name"));
+        assertTrue(e.getMessage().contains("缺少对应的参数值"));
+    }
+
+    /** 负数即使以 '-' 开头，仍可作为带值选项的参数值。 */
+    @Test
+    public void testNegativeNumberAsOptionValue() {
+        CommandDescriptor desc = new CommandDescriptor(WithVarsCmd.class);
+        CommandLineParser.ParseResult result = CommandLineParser.parse(
+                new String[]{"with-vars", "--name", "-1e3"}, desc);
+
+        assertEquals("-1e3", result.optionValues().get("--name"));
+    }
+
+    /** 未知选项在行尾也应报 UnknownOptionException，不应误报为缺少值。 */
+    @Test
+    public void testUnknownOptionAtEndOfLine() {
+        UnknownOptionException e = assertThrows(UnknownOptionException.class, () ->
+                QCmd.of(new String[]{"with-vars", "--unknown"}).parse(WithVarsCmd.class));
+        assertEquals("--unknown", e.getOptionName());
+    }
+
+    /** 向调用方暴露的解析结果必须是只读快照。 */
+    @Test
+    public void testParseResultIsImmutable() {
+        CommandDescriptor desc = new CommandDescriptor(WithVarsCmd.class);
+        CommandLineParser.ParseResult result = CommandLineParser.parse(
+                new String[]{"with-vars", "--name", "hello", "file.txt"}, desc);
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> result.optionValues().put("--name", "changed"));
+        assertThrows(UnsupportedOperationException.class,
+                () -> result.positionalVars().add("another.txt"));
+    }
+
+    /** 负数检测覆盖小数、科学计数法与非数字边界。 */
+    @Test
+    public void testNegativeNumberDetectionBoundaries() {
+        assertTrue(NegativeNumberHandler.isNegativeNumber("-.5"));
+        assertTrue(NegativeNumberHandler.isNegativeNumber("-1e3"));
+        assertFalse(NegativeNumberHandler.isNegativeNumber(null));
+        assertFalse(NegativeNumberHandler.isNegativeNumber("-"));
+        assertFalse(NegativeNumberHandler.isNegativeNumber("--name"));
+    }
+
+    /** 同一属性的多个别名同时出现时，按命令行顺序使用最后一个值。 */
+    @Test
+    public void testLastAliasValueWinsDeterministically() {
+        WithVarsCmd cmd = QCmd.of(new String[]{
+                "with-vars", "--name", "first", "-n", "second"
+        }).parse(WithVarsCmd.class).value();
+
+        assertEquals("second", cmd.name);
     }
 
     /** GNU 风格等号语法：--key=value 将等号前后拆分为选项名和值 */

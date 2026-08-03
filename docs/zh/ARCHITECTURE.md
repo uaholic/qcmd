@@ -15,14 +15,15 @@ QCmd.of(args)
   │
   ├─ 1. CommandDescriptor(Class)          ← 反射提取注解元数据
   ├─ 2. formatter.format(descriptor)      ← 生成帮助文本（可替换策略）
-  ├─ 3. TokenHandlerChain.execute(...)    ← Token 分词与分流（可扩展链）
-  ├─ 4. CommandValidator.validate(...)    ← 参数规则校验
-  └─ 5. InstanceBinder.bind(...)          ← 反射构造目标实例
+   ├─ 3. help/version 动作短路        ← 正常显示后退出
+   ├─ 4. TokenHandlerChain.execute(...)    ← Token 分词与分流（可扩展链）
+   ├─ 5. CommandValidator.validate(...)    ← 参数规则校验
+   └─ 6. InstanceBinder.bind(...)          ← 反射构造目标实例
        │
-       └─ ParsedCommand<T>(value, helpText)
+        └─ ParsedCommand<T>(value, helpText, action, outputText)
 ```
 
-5 个步骤之间唯一的共享状态是 `CommandDescriptor`（不可变元数据）和 `ParseResult`（不可变解析结果）。零副作用，零全局状态。
+解析管线中的 `CommandDescriptor` 和 `ParseResult` 以只读快照传递。`ConverterRegistry` 是明确的进程级全局扩展点；其他解析状态限定在当前 `QCmd` 会话内。
 
 ---
 
@@ -47,18 +48,19 @@ CommandDescriptor
 
 ### 元数据提取策略
 
-通过策略模式从 POJO 的 `Field` 或 Record 的 `RecordComponent` 中提取注解。每个 Field/RecordComponent 上 `@Parameter` 与 `@Vars` 互斥——找到 `@Parameter` 后跳过 `@Vars`：
+通过策略模式从 POJO 的 `Field` 或 Record 的 `RecordComponent` 中提取注解。每个 Field/RecordComponent 上 `@Parameter` 与 `@Vars` 互斥，同时声明会立即报错。提取完成后 descriptor 冻结，所有集合 getter 返回只读视图或副本。
 
 ```java
 for (Field field : fields) {
     Parameter param = field.getAnnotation(Parameter.class);
+    Vars vars = field.getAnnotation(Vars.class);
+    if (param != null && vars != null) {
+        throw new QCmdException("@Parameter 与 @Vars 不能同时声明");
+    }
     if (param != null) {
-        descriptor.registerOption(...);   // 仅 @Parameter 分支
-    } else {
-        Vars vAnno = field.getAnnotation(Vars.class);
-        if (vAnno != null) {
-            descriptor.registerVars(...); // 仅 @Vars 分支
-        }
+        descriptor.registerOption(...);
+    } else if (vars != null) {
+        descriptor.registerVars(...);
     }
 }
 ```
@@ -76,7 +78,7 @@ for (Field field : fields) {
 5. Map（解析 k=v → 递归转换键值）
 6. unique String 参数构造方法兜底
 
-转换器实例通过 `ConcurrentHashMap` 缓存，避免重复反射实例化。
+注解声明的转换器按解析请求实例化，不强制用户转换器承担全局线程安全责任。`ConverterRegistry` 中显式注册的实例则由调用方负责生命周期和线程安全。
 
 ---
 
@@ -109,7 +111,7 @@ interface TokenHandler {
 | 2 | `EqualsSignOptionHandler` | `-x` 且含 `=` | 拆分为 key=value 选项 |
 | 3 | `BooleanFlagHandler` | 已知 bool 选项 | 存 `"true"` |
 | 4 | `NegativeNumberHandler` | `-\d` 且非已知选项 | 归为位置变量 |
-| 5 | `StandardOptionHandler` | 其他 `-` 前缀 | 消费下一 token 作值 |
+| 5 | `StandardOptionHandler` | 其他 `-` 前缀 | 已知选项安全消费值；未知选项留给校验器 |
 | 6 | `PositionalHandler` | 非 `-` 前缀 或终止后 | 归为位置变量 |
 
 ### 可扩展性
@@ -126,7 +128,7 @@ interface TokenHandler {
 | `replace(Class, handler)` | 替换指定 handler |
 | `remove(Class)` | 移除指定 handler |
 
-链是不可变的——Builder 的每个构建操作返回新的 `TokenHandlerChain`。
+Builder 在构建阶段是可变的；`build()` 会防御性复制 handler 列表，生成不可变的 `TokenHandlerChain`。
 
 用户通过 `QCmd.withTokenHandlers()` 单入口使用：
 
@@ -225,11 +227,12 @@ QCmd.of(args).withHelpFormatter(d -> "USAGE: " + d.getCommandNames()).parse(MyCm
 
 ### QCmd
 
-无状态门面，核心方法：
+一次性、可配置的解析会话，核心方法：
 
 ```java
 QCmd.of(String[] args)                                  // 工厂
 ParsedCommand<T> parse(Class<T> clazz)                  // 解析
+String QCmd.help(Class<?> clazz)                        // 独立生成帮助
 QCmd withTokenHandlers(UnaryOperator<Builder>)           // 扩展 Token 链
 QCmd withHelpFormatter(HelpFormatter)                    // 扩展帮助格式
 ```
@@ -237,7 +240,8 @@ QCmd withHelpFormatter(HelpFormatter)                    // 扩展帮助格式
 ### ParsedCommand
 
 ```java
-record ParsedCommand<T>(T value, String helpText) {}
+record ParsedCommand<T>(T value, String helpText,
+                        ParseAction action, String outputText) {}
 ```
 
 不可变结果容器，调用方无需持有 QCmd 实例即可获取帮助文本。
@@ -249,6 +253,7 @@ record ParsedCommand<T>(T value, String helpText) {}
 ```
 com.guanyanqi
 ├── QCmd.java                    ← 门面入口
+├── ParseAction.java             ← 执行 / 帮助 / 版本动作
 ├── ParsedCommand.java           ← 不可变结果容器
 ├── annotation/
 │   ├── Cmd.java                 ← @Cmd 注解
@@ -316,6 +321,6 @@ com.guanyanqi
 | 策略模式 | `CommandBindingStrategy` 接口 + Factory + 两个具体实现 |
 | 责任链模式 | `TokenHandler` 接口 + `TokenHandlerChain` + 6 个内置 handler |
 | 适配器模式 | `HelpFormatter` 接口 + 多输出格式实现（终端 / Markdown / 自定义） |
-| 不可变数据 | `ParseResult`、`ParsedCommand`、`TokenContext`、`TokenResult` 均为 record |
+| 不可变数据 | 解析结果使用 record + 只读集合，描述元数据构建后冻结 |
 | 开放扩展 | `ConverterRegistry`、`TokenHandlerChain.Builder`、`withTokenHandlers()`、`withHelpFormatter()` |
 | 静态工厂 | `QCmd.of()` 统一入口 |

@@ -30,10 +30,20 @@ public class StandardOptionHandler implements TokenHandler {
         if (!token.startsWith(Constants.SINGLE_DASH)) {
             return null;
         }
+        if (!context.descriptor().getNameToOptionMap().containsKey(token)) {
+            // 未知选项不消费后续 token，交由 CommandValidator 生成类型化异常。
+            return TokenResult.option(token, Constants.EMPTY_STRING, context.currentIndex() + 1);
+        }
         if (!context.hasNext()) {
             throw new QCmdException("参数选项 [" + token + "] 缺少对应的参数值");
         }
         String next = context.peekNext();
+        boolean nextIsRegisteredOption = context.descriptor().getNameToOptionMap().containsKey(next);
+        boolean nextLooksLikeOption = next.startsWith(Constants.SINGLE_DASH)
+                && !NegativeNumberHandler.isNegativeNumber(next);
+        if (Constants.DOUBLE_DASH.equals(next) || nextIsRegisteredOption || nextLooksLikeOption) {
+            throw new QCmdException("参数选项 [" + token + "] 缺少对应的参数值");
+        }
         return TokenResult.option(token, next, context.currentIndex() + 2);
     }
 }

@@ -3,6 +3,8 @@ package com.guanyanqi.core.parser.impl;
 import com.guanyanqi.constant.Constants;
 import com.guanyanqi.core.parser.*;
 
+import java.math.BigDecimal;
+
 /**
  * 负数位置参数防误判处理器。
  * <p>
@@ -29,13 +31,30 @@ public class NegativeNumberHandler implements TokenHandler {
         if (!token.startsWith(Constants.SINGLE_DASH) || token.length() <= 1) {
             return null;
         }
-        char c = token.charAt(1);
-        if (Character.isDigit(c)) {
+        if (isNegativeNumber(token)) {
             boolean isRegisteredOption = context.descriptor().getNameToOptionMap().containsKey(token);
             if (!isRegisteredOption) {
                 return TokenResult.positional(token, context.currentIndex() + 1);
             }
         }
         return null;
+    }
+
+    /**
+     * 判断 token 是否为十进制负数（包括小数与科学计数法）。
+     *
+     * @param token 待检查 token
+     * @return 是负数时返回 true
+     */
+    public static boolean isNegativeNumber(String token) {
+        if (token == null || token.length() < 2 || token.charAt(0) != '-') {
+            return false;
+        }
+        try {
+            new BigDecimal(token);
+            return true;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
     }
 }

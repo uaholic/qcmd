@@ -137,14 +137,14 @@ public class TokenHandlerChainTest {
                 .build();
 
         CommandDescriptor desc = new CommandDescriptor(TestCmd.class);
-        // -3.14 不再被识别为负数，会被 StandardOptionHandler 消费下一个 token "hello"
-        // 作为其参数值，导致 "hello" 不再成为 positional var
+        // -3.14 不再被识别为负数，会被保留为未知选项，但不吞掉后续 token。
         CommandLineParser.ParseResult result = chain.execute(
                 new String[]{"test", "-n", "world", "-3.14", "hello"}, desc);
 
-        // -3.14 被当作未知选项处理，hello 被当作其值
+        // 未知选项由后续校验器报错，解析阶段不消费 hello。
         assertEquals("world", result.optionValues().get("-n"));
-        assertEquals("hello", result.optionValues().get("-3.14"));
+        assertEquals("", result.optionValues().get("-3.14"));
+        assertEquals(List.of("hello"), result.positionalVars());
     }
 
     @Test

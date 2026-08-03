@@ -55,6 +55,19 @@ public class TerminalHelpFormatter implements HelpFormatter {
             }
         }
 
+        boolean hasBuiltInHelp = !declaresAnyOption(descriptor, "-h", "--help");
+        boolean hasBuiltInVersion = !cmdAnno.version().isBlank()
+                && !declaresAnyOption(descriptor, "-V", "--version");
+        if (hasBuiltInHelp || hasBuiltInVersion) {
+            usage.append("内置选项：\n");
+            if (hasBuiltInHelp) {
+                usage.append("\t-h|--help：显示帮助信息\n");
+            }
+            if (hasBuiltInVersion) {
+                usage.append("\t-V|--version：显示版本信息\n");
+            }
+        }
+
         VarsDescriptor varsDesc = descriptor.getVarsDescriptor();
         if (varsDesc != null && varsDesc.desc() != null && !varsDesc.desc().trim().isEmpty()) {
             usage.append("变量描述：").append(varsDesc.desc()).append("\n");
@@ -85,5 +98,14 @@ public class TerminalHelpFormatter implements HelpFormatter {
             paramUsage.append("，输入规则：").append(option.valueValidDesc());
         }
         return paramUsage.toString();
+    }
+
+    private static boolean declaresAnyOption(CommandDescriptor descriptor, String... names) {
+        for (String name : names) {
+            if (descriptor.getNameToOptionMap().containsKey(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

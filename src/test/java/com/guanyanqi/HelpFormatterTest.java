@@ -7,6 +7,8 @@ import com.guanyanqi.core.CommandDescriptor;
 import com.guanyanqi.core.HelpFormatter;
 import com.guanyanqi.core.MarkdownHelpFormatter;
 import com.guanyanqi.core.TerminalHelpFormatter;
+import com.guanyanqi.exception.QCmdException;
+import com.guanyanqi.exception.UnknownOptionException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -49,6 +51,15 @@ public class HelpFormatterTest {
         @Parameter(names = "-p")
         public String param;
     }
+
+    @Cmd(names = "versioned", desc = "带版本命令", version = "2.4.0")
+    public record VersionedCmd(
+            @Parameter(names = "--required", required = true)
+            String required
+    ) {}
+
+    @Cmd(names = "literal-help")
+    public record LiteralHelpCmd(@Vars String value) {}
 
     /** 验证帮助文本包含命令名、描述、参数说明和变量描述 */
     @Test
@@ -109,5 +120,75 @@ public class HelpFormatterTest {
         String help = parsed.helpText();
         assertTrue(help.contains("### `demo`"));
         assertTrue(help.contains("| `-n, --name` |"));
+    }
+
+    /** --help 应跳过 required 校验与实例绑定，作为正常的显示动作返回。 */
+    @Test
+    public void testBuiltInHelpAction() {
+        ParsedCommand<VersionedCmd> parsed = QCmd.of(
+                new String[]{"versioned", "--help"}).parse(VersionedCmd.class);
+
+        assertEquals(ParseAction.SHOW_HELP, parsed.action());
+        assertTrue(parsed.shouldExit());
+        assertNull(parsed.value());
+        assertEquals(parsed.helpText(), parsed.outputText());
+        assertTrue(parsed.outputText().contains("命令：versioned"));
+    }
+
+    /** 配置 @Cmd.version 后，--version 返回可直接输出的版本文本。 */
+    @Test
+    public void testBuiltInVersionAction() {
+        ParsedCommand<VersionedCmd> parsed = QCmd.of(
+                new String[]{"versioned", "--version"}).parse(VersionedCmd.class);
+
+        assertEquals(ParseAction.SHOW_VERSION, parsed.action());
+        assertTrue(parsed.shouldExit());
+        assertNull(parsed.value());
+        assertEquals("versioned 2.4.0", parsed.outputText());
+    }
+
+    /** 静态 help API 不需要伪造一组合法命令行参数。 */
+    @Test
+    public void testStandaloneHelpApi() {
+        String help = QCmd.help(VersionedCmd.class);
+        assertTrue(help.contains("命令：versioned"));
+        assertTrue(help.contains("-V|--version"));
+    }
+
+    /** -- 终止符之后的 --help 是字面位置参数，不触发内置帮助。 */
+    @Test
+    public void testHelpAfterTerminatorIsPositional() {
+        ParsedCommand<LiteralHelpCmd> parsed = QCmd.of(
+                new String[]{"literal-help", "--", "--help"}).parse(LiteralHelpCmd.class);
+
+        assertEquals(ParseAction.EXECUTE, parsed.action());
+        assertFalse(parsed.shouldExit());
+        assertEquals("--help", parsed.value().value());
+    }
+
+    /** 帮助请求也必须先匹配正确的命令名。 */
+    @Test
+    public void testHelpStillValidatesCommandName() {
+        QCmdException e = assertThrows(QCmdException.class, () ->
+                QCmd.of(new String[]{"wrong", "--help"}).parse(VersionedCmd.class));
+        assertTrue(e.getMessage().contains("不匹配"));
+    }
+
+    /** 未在 @Cmd 配置 version 时，--version 仍是未知选项。 */
+    @Test
+    public void testVersionOptionRequiresConfiguration() {
+        assertThrows(UnknownOptionException.class, () ->
+                QCmd.of(new String[]{"demo", "--version"}).parse(HelpDemoCmd.class));
+    }
+
+    /** QCmd 的扩展点对 null 提供即时、明确的参数校验。 */
+    @Test
+    public void testNullCustomizersAreRejected() {
+        assertThrows(NullPointerException.class, () ->
+                QCmd.of(new String[]{"demo"}).withHelpFormatter(null));
+        assertThrows(NullPointerException.class, () ->
+                QCmd.of(new String[]{"demo"}).withTokenHandlers(null));
+        assertThrows(NullPointerException.class, () ->
+                QCmd.of(new String[]{"demo"}).withTokenHandlers(builder -> null));
     }
 }

@@ -15,7 +15,6 @@ import com.guanyanqi.utils.QCmdUtils;
 
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 提取并持有命令类的统一领域模型描述符（包含 OptionDescriptor 列表与 VarsDescriptor）。
@@ -42,11 +41,7 @@ public class CommandDescriptor {
     private final Set<String> boolOptionNames = new HashSet<>();
     private final List<List<String>> requiredOptionGroups = new ArrayList<>();
     private VarsDescriptor varsDescriptor;
-
-    /**
-     * 转换器单例缓存，避免频繁反射实例化。
-     */
-    private static final Map<Class<? extends QStringConverter<?>>, QStringConverter<?>> CONVERTER_CACHE = new ConcurrentHashMap<>();
+    private boolean frozen;
 
     /**
      * 构造命令描述符模型。
@@ -62,11 +57,20 @@ public class CommandDescriptor {
         if (this.cmdAnnotation.names().length == 0) {
             throw new QCmdException("命令类 " + targetClass.getName() + " @Cmd 注解 names 不能为空");
         }
-        this.commandNames = new HashSet<>(Arrays.asList(this.cmdAnnotation.names()));
+        this.commandNames = new LinkedHashSet<>();
+        for (String name : this.cmdAnnotation.names()) {
+            if (name == null || name.isBlank()) {
+                throw new QCmdException("命令类 " + targetClass.getName() + " @Cmd 注解不能包含空命令名");
+            }
+            if (!this.commandNames.add(name)) {
+                throw new QCmdException("命令类 " + targetClass.getName() + " 重复声明命令名 [" + name + "]");
+            }
+        }
 
         // 使用策略模式自动判定目标类类型（POJO 还是 Java Record），提取描述符元数据
         CommandBindingStrategy strategy = CommandBindingStrategyFactory.getStrategy(targetClass);
         strategy.extractMetadata(targetClass, this);
+        this.frozen = true;
     }
 
     /**
@@ -75,6 +79,20 @@ public class CommandDescriptor {
      * @param option 待注册的选项描述符
      */
     public void registerOption(OptionDescriptor option) {
+        ensureBuilding();
+        Objects.requireNonNull(option, "Option descriptor must not be null");
+        if (option.names().length == 0) {
+            throw new QCmdException("属性 [" + option.targetName() + "] 的 @Parameter names 不能为空");
+        }
+        Set<String> namesInOption = new HashSet<>();
+        for (String name : option.names()) {
+            if (name == null || name.isBlank() || !name.startsWith("-") || "-".equals(name) || "--".equals(name)) {
+                throw new QCmdException("属性 [" + option.targetName() + "] 的参数名 [" + name + "] 无效");
+            }
+            if (!namesInOption.add(name)) {
+                throw new QCmdException("属性 [" + option.targetName() + "] 重复声明参数名 [" + name + "]");
+            }
+        }
         options.add(option);
         targetNameToOptionMap.put(option.targetName(), option);
         for (String name : option.names()) {
@@ -97,10 +115,17 @@ public class CommandDescriptor {
      * @param vars 位置变量描述符
      */
     public void registerVars(VarsDescriptor vars) {
+        ensureBuilding();
         if (this.varsDescriptor != null) {
             throw new QCmdException("命令类 " + targetClass.getName() + " 最多只能声明一个 @Vars 位置变量");
         }
         this.varsDescriptor = vars;
+    }
+
+    private void ensureBuilding() {
+        if (frozen) {
+            throw new QCmdException("命令描述元数据已完成构建，不允许再修改");
+        }
     }
 
     /**
@@ -144,29 +169,32 @@ public class CommandDescriptor {
 
         // 4. 处理 Collection 集合（递归解析元素泛型）
         if (Collection.class.isAssignableFrom(type)) {
-            Class<?> elementType = String.class;
+            Type elementGenericType = String.class;
             if (genericType instanceof ParameterizedType pType) {
-                elementType = (Class<?>) pType.getActualTypeArguments()[0];
+                elementGenericType = pType.getActualTypeArguments()[0];
             }
+            Class<?> elementType = rawClassOf(elementGenericType);
             Collection collection = QCmdUtils.createCollectionByType(type);
             for (String elemStr : DefaultCollectionStringConverter.getInstance().convert(rawValue)) {
-                collection.add(convertValue(elementType, elementType, NoConverter.class, elemStr));
+                collection.add(convertValue(elementType, elementGenericType, NoConverter.class, elemStr));
             }
             return collection;
         }
 
         // 5. 处理 Map 映射（递归解析 Key / Value 泛型）
         if (Map.class.isAssignableFrom(type)) {
-            Class<?> keyType = String.class;
-            Class<?> valueType = String.class;
+            Type keyGenericType = String.class;
+            Type valueGenericType = String.class;
             if (genericType instanceof ParameterizedType pType) {
-                keyType = (Class<?>) pType.getActualTypeArguments()[0];
-                valueType = (Class<?>) pType.getActualTypeArguments()[1];
+                keyGenericType = pType.getActualTypeArguments()[0];
+                valueGenericType = pType.getActualTypeArguments()[1];
             }
-            Map map = Map.class == type ? new HashMap<>() : (Map) type.getConstructor().newInstance();
+            Class<?> keyType = rawClassOf(keyGenericType);
+            Class<?> valueType = rawClassOf(valueGenericType);
+            Map map = QCmdUtils.createMapByType(type);
             for (Map.Entry<String, String> e : DefaultMapStringConverter.getInstance().convert(rawValue).entrySet()) {
-                Object k = convertValue(keyType, keyType, NoConverter.class, e.getKey());
-                Object v = convertValue(valueType, valueType, NoConverter.class, e.getValue());
+                Object k = convertValue(keyType, keyGenericType, NoConverter.class, e.getKey());
+                Object v = convertValue(valueType, valueGenericType, NoConverter.class, e.getValue());
                 map.put(k, v);
             }
             return map;
@@ -209,35 +237,52 @@ public class CommandDescriptor {
         } else {
             // 集合变量场景：将所有位置变量依次转换并添加入目标集合中
             Collection collection = QCmdUtils.createCollectionByType(type);
-            Class<?> elementType = String.class;
+            Type elementGenericType = String.class;
             if (genericType instanceof ParameterizedType pType) {
-                elementType = (Class<?>) pType.getActualTypeArguments()[0];
+                elementGenericType = pType.getActualTypeArguments()[0];
             }
+            Class<?> elementType = rawClassOf(elementGenericType);
             for (String varStr : positionalVars) {
                 if (customConverter != null) {
                     collection.add(customConverter.convert(varStr));
                 } else {
-                    collection.add(convertValue(elementType, elementType, NoConverter.class, varStr));
+                    collection.add(convertValue(elementType, elementGenericType, NoConverter.class, varStr));
                 }
             }
             return collection;
         }
     }
 
-    /**
-     * 从缓存获取或反射实例化转换器单例。
-     */
+    /** 为当前解析请求反射实例化自定义转换器。 */
     private static QStringConverter<?> getConverterInstance(Class<? extends QStringConverter<?>> clazz) {
         if (clazz == NoConverter.class || clazz == null) return null;
-        return CONVERTER_CACHE.computeIfAbsent(clazz, key -> {
-            try {
-                Constructor<? extends QStringConverter<?>> ctor = key.getDeclaredConstructor();
-                ctor.setAccessible(true);
-                return ctor.newInstance();
-            } catch (Exception e) {
-                throw new QCmdException("实例化转换器 [" + key.getName() + "] 失败", e);
-            }
-        });
+        try {
+            Constructor<? extends QStringConverter<?>> ctor = clazz.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            return ctor.newInstance();
+        } catch (Exception e) {
+            throw new QCmdException("实例化转换器 [" + clazz.getName() + "] 失败", e);
+        }
+    }
+
+    /** 将完整泛型 Type 解析为可实例化或查找转换器的原始 Class。 */
+    private static Class<?> rawClassOf(Type type) {
+        if (type instanceof Class<?> clazz) {
+            return clazz;
+        }
+        if (type instanceof ParameterizedType parameterizedType) {
+            return rawClassOf(parameterizedType.getRawType());
+        }
+        if (type instanceof WildcardType wildcardType && wildcardType.getUpperBounds().length > 0) {
+            return rawClassOf(wildcardType.getUpperBounds()[0]);
+        }
+        if (type instanceof TypeVariable<?> typeVariable && typeVariable.getBounds().length > 0) {
+            return rawClassOf(typeVariable.getBounds()[0]);
+        }
+        if (type instanceof GenericArrayType arrayType) {
+            return Array.newInstance(rawClassOf(arrayType.getGenericComponentType()), 0).getClass();
+        }
+        throw new QCmdException("不支持的泛型类型 [" + type.getTypeName() + "]");
     }
 
     /**
@@ -259,35 +304,37 @@ public class CommandDescriptor {
      *
      * @return commandNames
      */
-    public Set<String> getCommandNames() { return commandNames; }
+    public Set<String> getCommandNames() { return Collections.unmodifiableSet(commandNames); }
 
     /**
      * 获取选项描述符列表。
      *
      * @return options 列表
      */
-    public List<OptionDescriptor> getOptions() { return options; }
+    public List<OptionDescriptor> getOptions() { return Collections.unmodifiableList(options); }
 
     /**
      * 获取选项名到 OptionDescriptor 的映射。
      *
      * @return nameToOptionMap
      */
-    public Map<String, OptionDescriptor> getNameToOptionMap() { return nameToOptionMap; }
+    public Map<String, OptionDescriptor> getNameToOptionMap() { return Collections.unmodifiableMap(nameToOptionMap); }
 
     /**
      * 获取所有布尔类型的选项名称集合。
      *
      * @return boolOptionNames 集合
      */
-    public Set<String> getBoolOptionNames() { return boolOptionNames; }
+    public Set<String> getBoolOptionNames() { return Collections.unmodifiableSet(boolOptionNames); }
 
     /**
      * 获取必填选项组列表。
      *
      * @return requiredOptionGroups 列表
      */
-    public List<List<String>> getRequiredOptionGroups() { return requiredOptionGroups; }
+    public List<List<String>> getRequiredOptionGroups() {
+        return requiredOptionGroups.stream().map(List::copyOf).toList();
+    }
 
     /**
      * 获取位置变量描述符。
