@@ -6,6 +6,11 @@ All notable changes to qcmd are documented here. The project follows semantic ve
 
 ## [Unreleased]
 
+### 变更 / Changed
+
+- README 明确 qcmd 的 Record-first、小型单命令定位，以及与完整 CLI 框架的适用边界。 / README now clarifies qcmd's Record-first, focused single-command positioning and its scope relative to full-featured CLI frameworks.
+- 可运行示例移至测试源码，在 `mvn verify` 中继续编译，但不再进入发布 jar。 / The runnable example now lives in test sources, where it remains compile-checked by `mvn verify` without being packaged in the published jar.
+
 ## [1.1.2] - 2026-08-03
 
 ### 新增 / Added

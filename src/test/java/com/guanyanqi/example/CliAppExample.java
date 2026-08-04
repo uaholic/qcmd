@@ -10,7 +10,7 @@ import com.guanyanqi.converter.QStringConverter;
 import java.util.List;
 
 /**
- * 生产级 CLI 示范应用示例。
+ * 可运行的 CLI 示范应用。
  * 演示如何一行代码解析包含 POJO / Record / 正则校验 / 自定义 Converter / 负数 / 部署文件列表的真实场景命令。
  *
  * @author guanyanqi

@@ -11,9 +11,9 @@
 
 ## 中文
 
-**qcmd**（Quick Command）是一个面向 Java 17+ 的小型、**零运行时依赖**、注解驱动命令行参数解析库，原生支持 Java Record。
+**qcmd**（Quick Command）是一个面向 Java 17+、以不可变 Record 绑定为核心的小型命令行参数解析库。它通过 RecordComponent 和 Canonical Constructor，把常见命令行选项、布尔开关及位置参数直接绑定为 Record，也支持传统 POJO。
 
-它把常见命令行选项、布尔开关和位置参数映射到 POJO 或不可变 Record，并提供必填与正则校验。
+qcmd 不试图替代 picocli 这类完整 CLI 框架。它适合单命令工具、内部开发工具和希望用最少概念直接获得不可变配置对象的场景；如果项目需要子命令体系、短选项组合、shell 补全或更完整的 POSIX/GNU 语法，请优先选择 picocli。
 
 ### 核心特性
 
@@ -165,6 +165,7 @@ QCmd.of(args)
 
 ### 文档
 
+- [完整可运行示例](src/test/java/com/guanyanqi/example/CliAppExample.java)
 - [使用指南](docs/zh/USAGE.md) · [English](docs/en/USAGE.md)
 - [架构设计](docs/zh/ARCHITECTURE.md) · [English](docs/en/ARCHITECTURE.md)
 - [扩展指南](docs/zh/EXTENDING.md) · [English](docs/en/EXTENDING.md)
@@ -178,7 +179,9 @@ QCmd.of(args)
 
 ## English
 
-**qcmd** (Quick Command) is a small, zero-runtime-dependency, annotation-driven CLI argument parser for Java 17+ with native Record support. It maps common options, boolean flags, and positional arguments onto POJOs or immutable Records, with required-value and regex validation.
+**qcmd** (Quick Command) is a small Java 17+ command-line parser centered on immutable Record binding. It uses RecordComponent metadata and the Canonical Constructor to bind common options, boolean flags, and positional arguments directly to Records, while also supporting traditional POJOs.
+
+qcmd is not intended to replace full-featured CLI frameworks such as picocli. It is designed for single-command applications, internal developer tools, and codebases that want an immutable configuration object with minimal concepts. Choose picocli when you need a subcommand hierarchy, combined short options, shell completion, or a broader POSIX/GNU syntax surface.
 
 ### Features
 
@@ -303,6 +306,7 @@ QCmd.of(args)
 
 ### Documentation
 
+- [Complete runnable example](src/test/java/com/guanyanqi/example/CliAppExample.java)
 - [Usage Guide](docs/en/USAGE.md) · [中文](docs/zh/USAGE.md)
 - [Architecture](docs/en/ARCHITECTURE.md) · [中文](docs/zh/ARCHITECTURE.md)
 - [Extending](docs/en/EXTENDING.md) · [中文](docs/zh/EXTENDING.md)

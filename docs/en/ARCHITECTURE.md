@@ -13,12 +13,12 @@ QCmd.of(args)
   │
   ├─ 1. CommandDescriptor(Class)          ← reflection-based metadata extraction
   ├─ 2. formatter.format(descriptor)      ← help text (swappable strategy)
-   ├─ 3. TokenHandlerChain.execute(...)    ← token parsing, including built-in actions
-   ├─ 4. ACTION result shortcut             ← display help/version and exit normally
-   ├─ 5. CommandValidator.validate(...)    ← rule validation
-   └─ 6. InstanceBinder.bind(...)          ← reflection-based instance construction
+  ├─ 3. TokenHandlerChain.execute(...)    ← token parsing, including built-in actions
+  ├─ 4. ACTION result shortcut             ← display help/version and exit normally
+  ├─ 5. CommandValidator.validate(...)    ← rule validation
+  └─ 6. InstanceBinder.bind(...)          ← reflection-based instance construction
        │
-        └─ ParsedCommand<T>(value, helpText, action, outputText)
+       └─ ParsedCommand<T>(value, helpText, action, outputText)
 ```
 
 `CommandDescriptor` and `ParseResult` cross pipeline stages as read-only snapshots. `ConverterRegistry` is an explicit process-global extension point; other parsing state remains scoped to the current `QCmd` session.

@@ -15,12 +15,12 @@ QCmd.of(args)
   │
   ├─ 1. CommandDescriptor(Class)          ← 反射提取注解元数据
   ├─ 2. formatter.format(descriptor)      ← 生成帮助文本（可替换策略）
-   ├─ 3. TokenHandlerChain.execute(...)    ← Token 分流，含内置动作识别
-   ├─ 4. ACTION 结果短路                   ← 正常显示 help/version 后退出
-   ├─ 5. CommandValidator.validate(...)    ← 参数规则校验
-   └─ 6. InstanceBinder.bind(...)          ← 反射构造目标实例
+  ├─ 3. TokenHandlerChain.execute(...)    ← Token 分流，含内置动作识别
+  ├─ 4. ACTION 结果短路                   ← 正常显示 help/version 后退出
+  ├─ 5. CommandValidator.validate(...)    ← 参数规则校验
+  └─ 6. InstanceBinder.bind(...)          ← 反射构造目标实例
        │
-        └─ ParsedCommand<T>(value, helpText, action, outputText)
+       └─ ParsedCommand<T>(value, helpText, action, outputText)
 ```
 
 解析管线中的 `CommandDescriptor` 和 `ParseResult` 以只读快照传递。`ConverterRegistry` 是明确的进程级全局扩展点；其他解析状态限定在当前 `QCmd` 会话内。
@@ -306,11 +306,11 @@ com.guanyanqi
 │   ├── MissingParameterException.java
 │   ├── InvalidParameterValueException.java
 │   └── UnknownOptionException.java
-├── utils/
-│   └── QCmdUtils.java
-└── example/
-    └── CliAppExample.java
+└── utils/
+    └── QCmdUtils.java
 ```
+
+可运行示例位于 `src/test/java/com/guanyanqi/example/`：随测试源码编译，但不进入发布 jar。
 
 ---
 
